@@ -20,11 +20,11 @@ import { prisma } from '@/lib/prisma'
  * @throws {Error} If there is an error fetching the student's progress report.
  */
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const studentId = params.id
+    const { id: studentId } = await params
 
     // Get student
     const student = await prisma.student.findUnique({
