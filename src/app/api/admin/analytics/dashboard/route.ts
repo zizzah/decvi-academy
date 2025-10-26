@@ -15,7 +15,7 @@ import { prisma } from '@/lib/prisma'
  *
  * @throws {Error} If there is an error fetching the analytics data.
  */
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     // Total students
     const totalStudents = await prisma.student.count()
