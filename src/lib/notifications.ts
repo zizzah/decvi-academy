@@ -4,7 +4,7 @@
 // ============================================
 
 import { prisma } from './prisma'
-import { NotificationType } from '@/generated/prisma'
+import { NotificationType } from '../generated/prisma'
 
 export async function createNotification({
   userId,
