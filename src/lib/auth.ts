@@ -52,7 +52,7 @@ export function verifyToken(token: string): Record<string, unknown> | null {
   try {
     const decoded = verify(token, JWT_SECRET)
     return typeof decoded === 'object' && decoded !== null ? decoded as Record<string, unknown> : null
-  } catch (error) {
+  } catch {
     return null
   }
 }

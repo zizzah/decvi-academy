@@ -44,7 +44,7 @@ export function AttendanceQRScanner({ studentId }: { studentId: string }) {
       } else {
         setMessage(`❌ ${data.error}`)
       }
-    } catch (error) {
+    } catch {
       setMessage('❌ Failed to check in')
     } finally {
       setLoading(false)

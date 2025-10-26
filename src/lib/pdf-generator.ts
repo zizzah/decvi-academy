@@ -25,6 +25,7 @@ export async function generateCertificatePDF(certificateId: string): Promise<str
   // - Puppeteer to render HTML/CSS as PDF
   // - Third-party API like DocRaptor
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const htmlTemplate = `
     <!DOCTYPE html>
     <html>

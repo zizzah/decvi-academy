@@ -34,8 +34,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const validatedData = projectSubmissionSchema.parse(body)
-    
-    const { studentId, ...projectData } = body
+    const { studentId } = body
 
     const project = await prisma.project.create({
       data: {
