@@ -3,7 +3,7 @@
 // ============================================
 
 import { prisma } from './prisma'
-import { AchievementType } from '@prisma/client'
+import { AchievementType } from '@/generated/prisma'
 import { createNotification } from './notifications'
 
 /**

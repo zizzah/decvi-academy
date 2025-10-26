@@ -3,7 +3,7 @@
 // 9. types/index.ts - TypeScript Types
 // ============================================
 
-import { User, Student, Instructor, Admin, UserRole } from '@prisma/client'
+import { User, Student, Instructor, Admin, UserRole } from '@/generated/prisma'
 
 export type UserWithProfile = User & {
   student?: Student | null
