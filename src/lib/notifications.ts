@@ -4,7 +4,7 @@
 // ============================================
 
 import { prisma } from './prisma'
-import { NotificationType } from '@prisma/client'
+import { NotificationType, Prisma } from '@prisma/client'
 
 export async function createNotification({
   userId,
@@ -19,7 +19,7 @@ export async function createNotification({
   title: string
   message: string
   actionUrl?: string
-  metadata?: Record<string, unknown>
+  metadata?: Prisma.InputJsonValue | undefined
 }) {
   return await prisma.notification.create({
     data: {

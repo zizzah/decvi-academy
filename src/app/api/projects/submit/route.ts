@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     console.error('Project submission error:', error)
     
     if (error instanceof Error && error.name === 'ZodError') {
-      const zodError = error as { name: string; errors: unknown[] }
+      const zodError = error as unknown as { name: string; errors: unknown[] }
       return NextResponse.json(
         { error: 'Validation error', details: zodError.errors },
         { status: 400 }
