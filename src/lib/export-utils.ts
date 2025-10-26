@@ -5,7 +5,20 @@
 
 import { prisma } from './prisma'
 
-export async function exportStudentData(studentId: string): Promise<any> {
+interface Attendance {
+  status: string
+}
+
+interface Assessment {
+  score: number | null
+}
+
+interface StudentData {
+  attendance: Attendance[]
+  assessments: Assessment[]
+}
+
+export async function exportStudentData(studentId: string): Promise<Record<string, unknown>> {
   const student = await prisma.student.findUnique({
     where: { id: studentId },
     include: {
@@ -98,22 +111,22 @@ export async function exportStudentData(studentId: string): Promise<any> {
   }
 }
 
-function calculateAttendanceRate(student: any): number {
+function calculateAttendanceRate(student: StudentData): number {
   const attended = student.attendance.filter(
-    (a: any) => a.status === 'PRESENT' || a.status === 'LATE'
+    (a) => a.status === 'PRESENT' || a.status === 'LATE'
   ).length
   return student.attendance.length > 0 
     ? Math.round((attended / student.attendance.length) * 100) 
     : 0
 }
 
-function calculateAverageScore(student: any): number {
+function calculateAverageScore(student: StudentData): number {
   if (student.assessments.length === 0) return 0
-  const sum = student.assessments.reduce((acc: number, a: any) => acc + (a.score || 0), 0)
+  const sum = student.assessments.reduce((acc: number, a) => acc + (a.score || 0), 0)
   return Math.round(sum / student.assessments.length)
 }
 
-export async function exportCohortReport(cohortId: string): Promise<any> {
+export async function exportCohortReport(cohortId: string): Promise<Record<string, unknown>> {
   const cohort = await prisma.cohort.findUnique({
     where: { id: cohortId },
     include: {

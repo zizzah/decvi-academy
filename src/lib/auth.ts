@@ -46,11 +46,12 @@ export function generateToken(payload: string | object | Buffer, expiresIn: Sign
  * If the token is valid, returns the payload of the token.
  * If the token is invalid or expired, returns null.
  * @param {string} token - The token to be verified.
- * @returns {any} The payload of the token if it is valid, or null if it is invalid or expired.
+ * @returns {Record<string, unknown> | null} The payload of the token if it is valid, or null if it is invalid or expired.
  */
-export function verifyToken(token: string): any {
+export function verifyToken(token: string): Record<string, unknown> | null {
   try {
-    return verify(token, JWT_SECRET)
+    const decoded = verify(token, JWT_SECRET)
+    return typeof decoded === 'object' && decoded !== null ? decoded as Record<string, unknown> : null
   } catch (error) {
     return null
   }

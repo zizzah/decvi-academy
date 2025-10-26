@@ -53,7 +53,7 @@ export async function calculateStudentMetrics(studentId: string) {
       level: skill.level,
     })
     return acc
-  }, {} as Record<string, any[]>)
+  }, {} as Record<string, Array<{ name: string; score: number; level: string }>>)
 
   return {
     attendance: {

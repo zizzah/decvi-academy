@@ -14,7 +14,7 @@ import { prisma } from './prisma'
  * The returned students include their first name, last name, email, and cohort name.
  */
 export async function searchStudents(query: string, cohortId?: string) {
-  const whereClause: any = {
+  const whereClause: Record<string, unknown> = {
     OR: [
       { firstName: { contains: query, mode: 'insensitive' } },
       { lastName: { contains: query, mode: 'insensitive' } },
@@ -46,7 +46,7 @@ export async function searchStudents(query: string, cohortId?: string) {
  * The returned resources include their title, description, topic, tags, and creation date.
  */
 export async function searchResources(query: string, monthNumber?: number) {
-  const whereClause: any = {
+  const whereClause: Record<string, unknown> = {
     OR: [
       { title: { contains: query, mode: 'insensitive' } },
       { description: { contains: query, mode: 'insensitive' } },

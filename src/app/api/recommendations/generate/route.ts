@@ -98,8 +98,8 @@ export async function POST(request: NextRequest) {
         prisma.recommendation.create({
           data: {
             studentId,
-            type: rec.type as any,
-            priority: rec.priority as any,
+            type: rec.type,
+            priority: rec.priority,
             title: rec.title,
             description: rec.description,
             actionUrl: rec.actionUrl,
