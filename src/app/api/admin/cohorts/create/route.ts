@@ -44,13 +44,12 @@ export async function POST(request: NextRequest) {
       message: 'Cohort created successfully',
       cohort,
     })
-  } catch (error: unknown) {
+  } catch (error: string | any) {
     console.error('Cohort creation error:', error)
     
-    if (error instanceof Error && error.name === 'ZodError') {
-      const zodError = error as { name: string; errors: unknown[] }
+    if (error.name === 'ZodError') {
       return NextResponse.json(
-        { error: 'Validation error', details: zodError.errors },
+        { error: 'Validation error', details: error.errors },
         { status: 400 }
       )
     }

@@ -101,12 +101,19 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     console.error('Login error:', error)
     
-    if (error instanceof Error && error.name === 'ZodError') {
-      const zodError = error as { name: string; errors: unknown[] }
+    // Safely handle ZodError type check using 'instanceof' or shape check
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'name' in error &&
+      error['name'] === 'ZodError' &&
+      Array.isArray((error as any).errors)
+    ) {
       return NextResponse.json(
-        { error: 'Validation error', details: zodError.errors },
+        { error: 'Validation error', details: (error as any).errors },
         { status: 400 }
       )
+    }
     }
     
     return NextResponse.json(
@@ -114,4 +121,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+

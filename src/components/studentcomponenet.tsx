@@ -77,7 +77,7 @@ export function StudentDashboard({ studentId }: { studentId: string }) {
           <h1 className="text-3xl font-bold">
             Welcome back, {data.student.firstName}!
           </h1>
-          <p className="text-gray-600">Here's your learning progress</p>
+          <p className="text-gray-600">Here is your learning progress</p>
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold text-indigo-600">
