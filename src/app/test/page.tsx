@@ -5,7 +5,7 @@ import { useState } from 'react'
 export default function TestEmailPage() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<any>(null)
+  const [result, setResult] = useState<any | null>(null)
 
   const testBasicEmail = async () => {
     setLoading(true)
