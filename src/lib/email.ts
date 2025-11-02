@@ -1,78 +1,40 @@
-
 // ============================================
-// 9. types/index.ts - TypeScript Types
-// ============================================
-
-import { User, Student, Instructor, Admin, UserRole } from '@prisma/client'
-
-export type UserWithProfile = User & {
-  student?: Student | null
-  instructor?: Instructor | null
-  admin?: Admin | null
-}
-
-export interface AuthUser {
-  id: string
-  email: string
-  role: UserRole
-  profile?: Student | Instructor | Admin
-}
-
-export interface DashboardStats {
-  totalStudents: number
-  activeStudents: number
-  totalClasses: number
-  averageAttendance: number
-  completionRate: number
-}
-
-export interface StudentProgress {
-  attendanceRate: number
-  projectsCompleted: number
-  averageScore: number
-  skillsProficiency: Array<{
-    skillName: string
-    level: string
-    score: number
-  }>
-  monthlyProgress: Array<{
-    month: number
-    week: number
-    completionRate: number
-  }>
-}
-
-export interface RecommendationData {
-  type: string
-  priority: string
-  title: string
-  description: string
-  actionUrl?: string
-}
-
-// ============================================
-// 10. lib/email.ts - Email Service
+// lib/email.ts - Email Service (Updated)
 // ============================================
 
 import nodemailer from 'nodemailer'
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_SERVER_HOST,
-  port: parseInt(process.env.EMAIL_SERVER_PORT || '587'),
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_SERVER_USER,
-    pass: process.env.EMAIL_SERVER_PASSWORD,
-  },
-})
+// Create transporter with better error handling and configuration
+const createTransporter = () => {
+  const config = {
+    host: process.env.EMAIL_SERVER_HOST,
+    port: parseInt(process.env.EMAIL_SERVER_PORT || '587'),
+    secure: process.env.EMAIL_SERVER_PORT === '465', // true for 465, false for other ports
+    auth: {
+      user: process.env.EMAIL_SERVER_USER,
+      pass: process.env.EMAIL_SERVER_PASSWORD,
+    },
+    tls: {
+      // Do not fail on invalid certs
+      rejectUnauthorized: false,
+    },
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000, // 10 seconds
+    socketTimeout: 10000, // 10 seconds
+  }
+
+  console.log('Email config:', {
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
+    user: config.auth.user,
+  })
+
+  return nodemailer.createTransport(config)
+}
 
 /**
  * Sends an email using the configured email server.
- * @param {object} options - an object containing the email options
- * @param {string} options.to - the recipient's email address
- * @param {string} options.subject - the email subject
- * @param {string} options.html - the email body in HTML format
- * @returns {object} an object containing the success status of the email send operation and an optional error message if the send operation fails
  */
 export async function sendEmail({
   to,
@@ -84,13 +46,21 @@ export async function sendEmail({
   html: string
 }) {
   try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+    const transporter = createTransporter()
+    
+    // Verify connection configuration
+    await transporter.verify()
+    console.log('Email server is ready to send messages')
+    
+    const info = await transporter.sendMail({
+      from: process.env.EMAIL_FROM || `"DC VI Tech Academy" <${process.env.EMAIL_SERVER_USER}>`,
       to,
       subject,
       html,
     })
-    return { success: true }
+    
+    console.log('Email sent successfully:', info.messageId)
+    return { success: true, messageId: info.messageId }
   } catch (error) {
     console.error('Email error:', error)
     return { success: false, error }
@@ -99,9 +69,6 @@ export async function sendEmail({
 
 /**
  * Sends a verification email to a user with a link to verify their email address.
- * @param {string} email - the user's email address
- * @param {string} token - the verification token
- * @returns {Promise<object>} a promise that resolves to an object containing the success status of the email send operation and an optional error message if the send operation fails
  */
 export async function sendVerificationEmail(email: string, token: string) {
   const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`
@@ -153,10 +120,6 @@ export async function sendVerificationEmail(email: string, token: string) {
 
 /**
  * Sends a welcome email to the student after their email address has been verified.
- * The email contains a link to the student's dashboard and a message welcoming them to the DC VI Tech Academy community.
- * @param {string} email - The student's email address.
- * @param {string} firstName - The student's first name.
- * @returns {Promise<object>} A promise that resolves to an object containing the success status of the email send operation and an optional error message if the send operation fails.
  */
 export async function sendWelcomeEmail(email: string, firstName: string) {
   const html = `
@@ -206,10 +169,6 @@ export async function sendWelcomeEmail(email: string, firstName: string) {
 
 /**
  * Sends an email to a student warning them about low attendance.
- * @param {string} email - the student's email address
- * @param {string} firstName - the student's first name
- * @param {number} attendanceRate - the student's current attendance rate
- * @returns {Promise<object>} a promise that resolves to an object containing the success status of the email send operation and an optional error message if the send operation fails
  */
 export async function sendAttendanceWarning(
   email: string,

@@ -1,4 +1,3 @@
-
 // ============================================
 // 7. app/api/auth/register/route.ts - Registration API
 // ============================================
@@ -7,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword, generateVerificationToken } from '@/lib/auth'
 import { studentRegistrationSchema } from '@/lib/validations'
+import { sendVerificationEmail } from '@/lib/email'
 
 /**
  * Registers a new user.
@@ -68,7 +68,19 @@ export async function POST(request: NextRequest) {
       },
     })
     
-    // TODO: Send verification email
+    // Send verification email
+    try {
+      const emailResult = await sendVerificationEmail(user.email, verificationToken)
+      
+      if (!emailResult.success) {
+        console.error('Failed to send verification email:', emailResult.error)
+        // Note: We still return success because user was created
+        // You might want to implement a background job to retry failed emails
+      }
+    } catch (emailError) {
+      console.error('Error sending verification email:', emailError)
+      // Continue execution - don't fail registration due to email issues
+    }
     
     return NextResponse.json(
       {

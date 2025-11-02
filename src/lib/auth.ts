@@ -1,68 +1,76 @@
+// ============================================
+// lib/auth.ts - Authentication utilities
+// ============================================
 
-import { hash, compare } from 'bcryptjs'
-import { sign, verify } from 'jsonwebtoken'
-import type { Secret, SignOptions } from 'jsonwebtoken'
-
-const JWT_SECRET: Secret = process.env.NEXTAUTH_SECRET || 'your-secret-key'
+import bcrypt from 'bcryptjs'
+import { SignJWT, jwtVerify } from 'jose'
+import crypto from 'crypto'
 
 /**
- * Hashes a password using bcrypt.
- *
- * @param {string} password - The password to hash.
- * @returns {Promise<string>} - A promise that resolves to the hashed password.
+ * Hash a password using bcrypt
  */
 export async function hashPassword(password: string): Promise<string> {
-  return await hash(password, 12)
+  return bcrypt.hash(password, 10)
 }
 
 /**
- * Compares a given password with a hashed password using bcrypt.
- * Returns true if the passwords match, false otherwise.
- * @throws {Error} If there is an error comparing the passwords.
- * @returns {Promise<boolean>} A promise that resolves to true if the passwords match, false otherwise.
+ * Verify a password against a hash
  */
 export async function verifyPassword(
   password: string,
   hashedPassword: string
 ): Promise<boolean> {
-  return await compare(password, hashedPassword)
+  return bcrypt.compare(password, hashedPassword)
 }
 
 /**
- * Generates a JSON Web Token (JWT) based on the given payload.
- * The token will expire after the given expiresIn.
- * If expiresIn is not provided, the token will expire after 7 days.
- * @param {string | object | Buffer} payload - The payload to be signed.
- * @param {SignOptions['expiresIn']} [expiresIn='7d'] - The expiration time of the token.
- * @returns {string} The generated JWT token.
+ * Generate a JWT token
  */
-export function generateToken(payload: string | object | Buffer, expiresIn: SignOptions['expiresIn'] = '7d'): string {
-  const options: SignOptions = { expiresIn }
-  return sign(payload, JWT_SECRET as Secret, options)
+export async function generateToken(payload: {
+  userId: string
+  email: string
+  role: string
+}): Promise<string> {
+  const secret = new TextEncoder().encode(
+    process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+  )
+  
+  const token = await new SignJWT(payload)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('7d')
+    .sign(secret)
+  
+  return token
 }
 
 /**
- * Verify a token by checking if it is valid and not expired.
- * If the token is valid, returns the payload of the token.
- * If the token is invalid or expired, returns null.
- * @param {string} token - The token to be verified.
- * @returns {Record<string, unknown> | null} The payload of the token if it is valid, or null if it is invalid or expired.
+ * Verify a JWT token
  */
-export function verifyToken(token: string): Record<string, unknown> | null {
+export async function verifyToken(token: string) {
   try {
-    const decoded = verify(token, JWT_SECRET)
-    return typeof decoded === 'object' && decoded !== null ? decoded as Record<string, unknown> : null
-  } catch {
+    const secret = new TextEncoder().encode(
+      process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+    )
+    
+    const { payload } = await jwtVerify(token, secret)
+    return payload as { userId: string; email: string; role: string }
+  } catch (error) {
+    console.error('Token verification failed:', error)
     return null
   }
 }
 
 /**
- * Generates a verification token as a string of two random alphanumeric strings each of length 13.
- * The token is used to verify the email address of a user when they sign up.
- * @returns {string} A verification token as a string of two random alphanumeric strings each of length 13.
+ * Generate a random verification token
  */
 export function generateVerificationToken(): string {
-  return Math.random().toString(36).substring(2, 15) + 
-         Math.random().toString(36).substring(2, 15)
+  return crypto.randomBytes(32).toString('hex')
+}
+
+/**
+ * Generate a random reset token
+ */
+export function generateResetToken(): string {
+  return crypto.randomBytes(32).toString('hex')
 }

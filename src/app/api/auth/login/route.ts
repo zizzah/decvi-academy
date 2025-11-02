@@ -1,6 +1,6 @@
 
 // ============================================
-// 8. app/api/auth/login/route.ts - Login API
+// app/api/auth/login/route.ts - Login API
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -13,12 +13,6 @@ import { loginSchema } from '@/lib/validations'
  * 
  * This API logs a user in and returns a JWT token if the login is successful.
  * The token is set as a HTTP-only cookie with a max age of 7 days.
- * 
- * @param {NextRequest} request - The request object from Next.js
- * @returns {NextResponse} - The response object from Next.js
- * 
- * @throws {Error} If there is an error logging the user in.
- * @throws {ZodError} If there is a validation error.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -72,7 +66,7 @@ export async function POST(request: NextRequest) {
     })
     
     // Generate JWT token
-    const token = generateToken({
+    const token = await generateToken({
       userId: user.id,
       email: user.email,
       role: user.role,
@@ -95,13 +89,14 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
     })
     
     return response
   } catch (error: unknown) {
     console.error('Login error:', error)
     
-    // Safely handle ZodError type check
+    // Handle Zod validation errors
     if (
       typeof error === 'object' &&
       error !== null &&
@@ -122,4 +117,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-
