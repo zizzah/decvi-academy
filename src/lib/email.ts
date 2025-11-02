@@ -71,7 +71,11 @@ export async function sendEmail({
  * Sends a verification email to a user with a link to verify their email address.
  */
 export async function sendVerificationEmail(email: string, token: string) {
-  const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+                  'http://localhost:3000'
+  
+  const verificationUrl = `${baseUrl}/verify-email?token=${token}`
   
   const html = `
     <!DOCTYPE html>
