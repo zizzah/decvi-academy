@@ -181,7 +181,7 @@ export default function LoginPage() {
             {/* Register Link */}
             <div className="text-center">
               <p className="text-sm text-gray-600 mb-3">
-                Don't have an account yet?
+                Don&apos;t have an account yet?
               </p>
               <Link href="/auth/register">
               <Button

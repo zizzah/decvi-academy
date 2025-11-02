@@ -2,22 +2,27 @@
 
 import { useState } from 'react'
 
+interface EmailResult {
+  success: boolean
+  messageId?: string
+  error?: string | object
+}
+
 export default function TestEmailPage() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<any | null>(null)
+  const [result, setResult] = useState<EmailResult | null>(null)
 
   const testBasicEmail = async () => {
     setLoading(true)
     setResult(null)
-    
     try {
       const response = await fetch('/api/test-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: email }),
       })
-      const data = await response.json()
+      const data: EmailResult = await response.json()
       setResult(data)
       console.log('Email result:', data)
     } catch (error) {
@@ -31,18 +36,17 @@ export default function TestEmailPage() {
   const testVerificationEmail = async () => {
     setLoading(true)
     setResult(null)
-    
     try {
       const response = await fetch('/api/test-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           to: email,
           type: 'verification',
-          token: 'test-token-' + Date.now()
+          token: 'test-token-' + Date.now(),
         }),
       })
-      const data = await response.json()
+      const data: EmailResult = await response.json()
       setResult(data)
       console.log('Verification email result:', data)
     } catch (error) {
@@ -56,18 +60,17 @@ export default function TestEmailPage() {
   const testWelcomeEmail = async () => {
     setLoading(true)
     setResult(null)
-    
     try {
       const response = await fetch('/api/test-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           to: email,
           type: 'welcome',
-          firstName: 'Test User'
+          firstName: 'Test User',
         }),
       })
-      const data = await response.json()
+      const data: EmailResult = await response.json()
       setResult(data)
       console.log('Welcome email result:', data)
     } catch (error) {
@@ -82,16 +85,17 @@ export default function TestEmailPage() {
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            📧 Email Service Test
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">📧 Email Service Test</h1>
           <p className="text-gray-600 mb-8">
             Test your email configuration and preview different email templates
           </p>
 
           {/* Email Input */}
           <div className="mb-6">
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Recipient Email Address
             </label>
             <input
@@ -133,24 +137,38 @@ export default function TestEmailPage() {
 
           {/* Results Display */}
           {result && (
-            <div className={`p-4 rounded-lg ${result.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+            <div
+              className={`p-4 rounded-lg ${
+                result.success
+                  ? 'bg-green-50 border border-green-200'
+                  : 'bg-red-50 border border-red-200'
+              }`}
+            >
               <div className="flex items-start">
-                <span className="text-2xl mr-3">
-                  {result.success ? '✅' : '❌'}
-                </span>
+                <span className="text-2xl mr-3">{result.success ? '✅' : '❌'}</span>
                 <div className="flex-1">
-                  <h3 className={`font-semibold mb-2 ${result.success ? 'text-green-900' : 'text-red-900'}`}>
+                  <h3
+                    className={`font-semibold mb-2 ${
+                      result.success ? 'text-green-900' : 'text-red-900'
+                    }`}
+                  >
                     {result.success ? 'Email Sent Successfully!' : 'Email Failed'}
                   </h3>
                   <div className="text-sm">
                     {result.success ? (
                       <div className="text-green-800">
-                        <p><strong>Message ID:</strong> {result.messageId}</p>
-                        <p className="mt-2">Check your inbox (and spam folder) at <strong>{email}</strong></p>
+                        <p>
+                          <strong>Message ID:</strong> {result.messageId}
+                        </p>
+                        <p className="mt-2">
+                          Check your inbox (and spam folder) at <strong>{email}</strong>
+                        </p>
                       </div>
                     ) : (
                       <div className="text-red-800">
-                        <p><strong>Error:</strong></p>
+                        <p>
+                          <strong>Error:</strong>
+                        </p>
                         <pre className="mt-2 p-2 bg-red-100 rounded overflow-x-auto text-xs">
                           {JSON.stringify(result.error, null, 2)}
                         </pre>
