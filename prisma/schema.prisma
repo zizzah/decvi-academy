@@ -696,3 +696,11 @@ model RateLimit {
 
   @@map("rate_limits")
 }
+
+model VerificationToken {
+  identifier String   // email address
+  token      String   @unique
+  expires    DateTime
+  
+  @@unique([identifier, token])
+}
