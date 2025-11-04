@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
@@ -36,7 +36,6 @@ export default function VerifyEmailPage() {
         setStatus('success')
         setMessage('Your email has been verified successfully!')
         
-        // Redirect to dashboard after 3 seconds
         setTimeout(() => {
           router.push('/dashboard')
         }, 3000)
@@ -172,5 +171,17 @@ export default function VerifyEmailPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600"></div>
+      </div>
+    }>
+      <VerifyEmailContent />
+    </Suspense>
   )
 }
