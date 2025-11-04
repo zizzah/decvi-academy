@@ -698,11 +698,10 @@ model RateLimit {
 }
 
 model VerificationToken {
-  identifier String   // email address
+  identifier String
   token      String   @unique
   expires    DateTime
-  
-  @@unique([identifier, token])
-  @@map("verification_tokens")  // Add this for consistency
 
+  @@unique([identifier, token])
+  @@map("verification_token") // 👈 match your actual table name
 }
