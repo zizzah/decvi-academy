@@ -1,22 +1,9 @@
-// ============================================
-// 7. app/api/auth/register/route.ts - Registration API
-// ============================================
-
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword, generateVerificationToken } from '@/lib/auth'
 import { studentRegistrationSchema } from '@/lib/validations'
 import { sendVerificationEmail } from '@/lib/email'
 
-/**
- * Registers a new user.
- *
- * @param {NextRequest} request - The request object from Next.js
- *
- * @returns {NextResponse} - The response object from Next.js
- *
- * @throws {Error} If there is an error registering the user.
- */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -68,23 +55,33 @@ export async function POST(request: NextRequest) {
       },
     })
     
+    // Create verification token in database
+    try {
+      await prisma.verificationToken.create({
+        data: {
+          identifier: user.email,
+          token: verificationToken,
+          expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+        }
+      })
+      
+      console.log('✅ Verification token created successfully')
+    } catch (tokenError) {
+      console.error('❌ Error creating verification token:', tokenError)
+      // Don't fail the registration, but log the error
+    }
+    
     // Send verification email
     try {
       const emailResult = await sendVerificationEmail(user.email, verificationToken)
-      const token = await prisma.verificationToken.create({data: {
-        identifier: user.email,
-        token: verificationToken,
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours from now
-      }})
-         console.log('Created verification token:', token);
+      
       if (!emailResult.success) {
-        console.error('Failed to send verification email:', emailResult.error)
-        // Note: We still return success because user was created
-        // You might want to implement a background job to retry failed emails
+        console.error('❌ Failed to send verification email:', emailResult.error)
+      } else {
+        console.log('✅ Verification email sent successfully')
       }
     } catch (emailError) {
-      console.error('Error sending verification email:', emailError)
-      // Continue execution - don't fail registration due to email issues
+      console.error('❌ Error sending verification email:', emailError)
     }
     
     return NextResponse.json(
@@ -95,7 +92,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error: unknown) {
-    console.error('Registration error:', error)
+    console.error('❌ Registration error:', error)
     
     if (error instanceof Error && error.name === 'ZodError') {
       const zodError = error as unknown as { name: string; errors: unknown[] }
