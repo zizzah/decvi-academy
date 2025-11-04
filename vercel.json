@@ -1,6 +1,7 @@
 {
-  "installCommand": "npm install --legacy-peer-deps",
-  "buildCommand": "npm install --legacy-peer-deps && npm run build",
+   "buildCommand": "prisma generate && next build",
+  "installCommand": "pnpm install",
+
   "builds": [
     {
       "src": "package.json",
