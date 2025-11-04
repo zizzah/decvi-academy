@@ -1,5 +1,9 @@
-import { defineConfig } from "@prisma/config";
+// prisma.config.ts
+import { config } from 'dotenv'
 
-export default defineConfig({
-  schema: "prisma/schema.prisma",
-});
+// Load environment variables from .env file
+config()
+
+export default {
+  // Add your Prisma configuration here if needed
+}
