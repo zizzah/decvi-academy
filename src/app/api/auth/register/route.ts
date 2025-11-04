@@ -71,7 +71,12 @@ export async function POST(request: NextRequest) {
     // Send verification email
     try {
       const emailResult = await sendVerificationEmail(user.email, verificationToken)
-      
+      const token = await prisma.verificationToken.create({data: {
+        identifier: user.email,
+        token: verificationToken,
+        expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours from now
+      }})
+         console.log('Created verification token:', token);
       if (!emailResult.success) {
         console.error('Failed to send verification email:', emailResult.error)
         // Note: We still return success because user was created
