@@ -152,7 +152,7 @@ export default function AdminNavbar() {
           </div>
           <div className="h-8 w-px bg-gray-200" />
           <div className="text-center">
-            <p className="text-gray-500 text-xs">Today's Classes</p>
+<p className="text-gray-500 text-xs">{"Today's Classes"}</p>
             <p className="font-semibold text-gray-900">12</p>
           </div>
         </div>
