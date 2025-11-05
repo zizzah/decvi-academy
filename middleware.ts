@@ -15,20 +15,27 @@ import type { NextRequest } from 'next/server'
  * @param {NextRequest} request - The request object from Next.js
  * @returns {NextResponse} - The response object from Next.js
  */
+// middleware.ts - Add admin protection
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value
   const { pathname } = request.nextUrl
 
-  // Public routes that don't require authentication
   const publicRoutes = ['/login', '/register', '/forgot-password', '/verify-email']
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
 
-  // If no token and trying to access protected route
+  // Protect admin routes
+  if (pathname.startsWith('/admin')) {
+    if (!token) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    // You'll need to decode token here to check role
+    // For now, redirect to login if no token
+  }
+
   if (!token && !isPublicRoute && pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // If has token and trying to access auth pages
   if (token && isPublicRoute) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
@@ -37,5 +44,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/register', '/forgot-password'],
+  matcher: ['/dashboard/:path*', '/admin/:path*', '/login', '/register'],
 }
