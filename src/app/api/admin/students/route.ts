@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/admin-auth'
+import { Prisma } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   const authError = await requireAdmin()
@@ -12,10 +13,10 @@ export async function GET(request: NextRequest) {
   const status = searchParams.get('status')
   const search = searchParams.get('search')
 
-  const where: any = {}
+  const where: Prisma.StudentWhereInput = {}
   
   if (cohortId) where.cohortId = cohortId
-  if (status) where.enrollmentStatus = status
+  if (status) where.enrollmentStatus = status as any // Cast based on your enum
   if (search) {
     where.OR = [
       { firstName: { contains: search, mode: 'insensitive' } },
