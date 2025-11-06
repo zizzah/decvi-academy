@@ -76,12 +76,12 @@ function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' })
-      router.push('/login')
+      router.push('auth/login')
       router.refresh()
     } catch (error) {
       console.error('Logout failed:', error)
       // Still redirect even if logout fails
-      router.push('/login')
+      router.push('auth/login')
     }
   }
 
