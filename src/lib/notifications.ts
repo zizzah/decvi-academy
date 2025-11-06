@@ -6,6 +6,18 @@
 import { prisma } from './prisma'
 import { NotificationType, Prisma } from '@prisma/client'
 
+/**
+ * Creates a notification for a user.
+ *
+ * @param {string} userId - The ID of the user to create the notification for.
+ * @param {NotificationType} type - The type of notification to create.
+ * @param {string} title - The title of the notification to create.
+ * @param {string} message - The message of the notification to create.
+ * @param {string} [actionUrl] - The URL to navigate to when the notification is clicked.
+ * @param {Prisma.InputJsonValue | undefined} [metadata] - Additional metadata to store with the notification.
+ *
+ * @returns {Promise<Prisma.Notification>>} - A promise that resolves with the created notification.
+ */
 export async function createNotification({
   userId,
   type,
@@ -33,6 +45,17 @@ export async function createNotification({
   })
 }
 
+/**
+ * Creates multiple notifications for multiple users.
+ *
+ * @param {string[]} userIds - The IDs of the users to create the notifications for.
+ * @param {NotificationType} type - The type of notification to create.
+ * @param {string} title - The title of the notification to create.
+ * @param {string} message - The message of the notification to create.
+ * @param {string} [actionUrl] - The URL to navigate to when the notification is clicked.
+ *
+ * @returns {Promise<Prisma.BatchPayload>} - A promise that resolves with the created notifications.
+ */
 export async function createBulkNotifications({
   userIds,
   type,
@@ -57,6 +80,13 @@ export async function createBulkNotifications({
   })
 }
 
+/**
+ * Marks a notification as read.
+ *
+ * @param {string} notificationId - The ID of the notification to mark as read.
+ *
+ * @returns {Promise<void>} - A promise that resolves when the notification has been marked as read.
+ */
 export async function markNotificationAsRead(notificationId: string) {
   return await prisma.notification.update({
     where: { id: notificationId },

@@ -1,8 +1,15 @@
-// middleware.ts - Fixed with proper role checking
+// middleware.ts - Updated with instructor route protection
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
 
+/**
+ * Verifies a JWT token and decodes its payload if valid.
+ * Returns the payload if the token is valid, otherwise returns null.
+ * @param {string} token - The JWT token to verify and decode.
+ * @returns {Promise<{ userId: string, email: string, role: string } | null>}
+ * @throws {Error} If there is an error verifying the token.
+ */
 async function verifyAndDecodeToken(token: string) {
   try {
     const secret = new TextEncoder().encode(
@@ -16,17 +23,26 @@ async function verifyAndDecodeToken(token: string) {
   }
 }
 
+/**
+ * Middleware to protect routes based on authentication and role.
+ * Verifies a JWT token and decodes its payload if valid.
+ * Redirects users to login if no token or invalid token.
+ * Redirects authenticated users to their respective dashboard based on role.
+ * Protects admin and instructor routes from unauthorized access.
+ * @param {NextRequest} request - The request object from Next.js.
+ * @returns {Promise<NextResponse>} - The response object from Next.js.
+ */
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value
   const { pathname } = request.nextUrl
 
-  const publicRoutes = ['/login', '/register', '/forgot-password', '/verify-email']
+  const publicRoutes = ['auth/login', 'auth/register', 'auth/forgot-password', '/verify-email']
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
 
   // If no token and trying to access protected routes
   if (!token && !isPublicRoute) {
-    if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
-      return NextResponse.redirect(new URL('/login', request.url))
+    if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin') || pathname.startsWith('/instructor')) {
+      return NextResponse.redirect(new URL('auth/login', request.url))
     }
   }
 
@@ -36,7 +52,7 @@ export async function middleware(request: NextRequest) {
     
     // Invalid token - clear cookie and redirect to login
     if (!payload) {
-      const response = NextResponse.redirect(new URL('/login', request.url))
+      const response = NextResponse.redirect(new URL('auth/login', request.url))
       response.cookies.delete('auth-token')
       return response
     }
@@ -46,6 +62,8 @@ export async function middleware(request: NextRequest) {
       // Redirect based on role
       if (payload.role === 'ADMIN') {
         return NextResponse.redirect(new URL('/admin', request.url))
+      } else if (payload.role === 'INSTRUCTOR') {
+        return NextResponse.redirect(new URL('/instructor', request.url))
       } else if (payload.role === 'STUDENT') {
         return NextResponse.redirect(new URL('/dashboard', request.url))
       }
@@ -56,14 +74,23 @@ export async function middleware(request: NextRequest) {
     // Protect admin routes - only ADMIN role can access
     if (pathname.startsWith('/admin')) {
       if (payload.role !== 'ADMIN') {
-        return NextResponse.redirect(new URL('/dashboard', request.url))
+        return NextResponse.redirect(new URL('/unauthorized', request.url))
       }
     }
 
-    // Protect student dashboard - ADMIN should not access student dashboard
+    // Protect instructor routes - only INSTRUCTOR role can access
+    if (pathname.startsWith('/instructor')) {
+      if (payload.role !== 'INSTRUCTOR') {
+        return NextResponse.redirect(new URL('/unauthorized', request.url))
+      }
+    }
+
+    // Protect student dashboard - ADMIN and INSTRUCTOR should not access student dashboard
     if (pathname.startsWith('/dashboard')) {
       if (payload.role === 'ADMIN') {
         return NextResponse.redirect(new URL('/admin', request.url))
+      } else if (payload.role === 'INSTRUCTOR') {
+        return NextResponse.redirect(new URL('/instructor', request.url))
       }
     }
   }
@@ -72,5 +99,13 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/admin/:path*', 'auth/login', 'auth/register', 'auth/forgot-password', '/verify-email'],
+  matcher: [
+    '/dashboard/:path*', 
+    '/admin/:path*', 
+    '/instructor/:path*',
+    '/auth/login', 
+    '/auth/register', 
+    '/auth/forgot-password', 
+    '/verify-email'
+  ],
 }
