@@ -1,5 +1,7 @@
+// app/dashboard/page.tsx - Complete Student Dashboard
 'use client'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
@@ -60,6 +62,8 @@ function calculateGrade(percentage: number): string {
 }
 
 function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const router = useRouter()
+  
   const menuItems = [
     { icon: <Home className="w-5 h-5" />, label: 'Dashboard', active: true },
     { icon: <FolderKanban className="w-5 h-5" />, label: 'Projects' },
@@ -68,6 +72,18 @@ function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
     { icon: <Award className="w-5 h-5" />, label: 'Achievements' },
     { icon: <Settings className="w-5 h-5" />, label: 'Settings' },
   ]
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      router.push('/login')
+      router.refresh()
+    } catch (error) {
+      console.error('Logout failed:', error)
+      // Still redirect even if logout fails
+      router.push('/login')
+    }
+  }
 
   return (
     <div>
@@ -112,6 +128,7 @@ function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
             <Button
               variant="ghost"
               className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={handleLogout}
             >
               <LogOut className="w-5 h-5 mr-3" />
               Logout
@@ -160,6 +177,7 @@ function Navbar({ onMenuClick, studentName }: { onMenuClick: () => void; student
 }
 
 export default function StudentDashboard() {
+  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -172,11 +190,17 @@ export default function StudentDashboard() {
         
         if (!userResponse.ok) {
           // Redirect to login if not authenticated
-          window.location.href = '/auth/login'
+          router.push('/login')
           return
         }
 
         const userData = await userResponse.json()
+        
+        // Check if user is admin (should not be on student dashboard)
+        if (userData.role === 'ADMIN') {
+          router.push('/admin')
+          return
+        }
         
         // Check if user has a student profile
         if (!userData.profile?.id) {
@@ -203,7 +227,7 @@ export default function StudentDashboard() {
     }
 
     fetchData()
-  }, [])
+  }, [router])
 
   if (loading) {
     return (
@@ -237,6 +261,7 @@ export default function StudentDashboard() {
         <Navbar onMenuClick={() => setSidebarOpen(true)} studentName={studentName} />
 
         <main className="flex-1 p-6 space-y-6">
+          {/* Welcome Section */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
@@ -260,6 +285,7 @@ export default function StudentDashboard() {
             </div>
           </div>
 
+          {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card className="border-blue-100 hover:shadow-lg transition">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -328,6 +354,7 @@ export default function StudentDashboard() {
             </Card>
           </div>
 
+          {/* Skills and Achievements Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="border-blue-100">
               <CardHeader>
@@ -369,33 +396,42 @@ export default function StudentDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {data.achievements.map((achievement, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-transparent rounded-lg border border-blue-100"
-                    >
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Award className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-gray-900 truncate">
-                          {achievement.name}
+                  {data.achievements.length > 0 ? (
+                    data.achievements.map((achievement, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-transparent rounded-lg border border-blue-100"
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-full flex items-center justify-center flex-shrink-0">
+                          <Award className="w-5 h-5 text-white" />
                         </div>
-                        <div className="text-sm text-gray-600">
-                          {new Date(achievement.earnedAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-gray-900 truncate">
+                            {achievement.name}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {new Date(achievement.earnedAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </div>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Award className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                      <p>No achievements yet</p>
+                      <p className="text-sm">Keep learning to earn badges!</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
           </div>
 
+          {/* Quick Actions */}
           <Card className="border-blue-100">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">

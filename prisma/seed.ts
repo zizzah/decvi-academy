@@ -5,6 +5,12 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+/**
+ * Seeds the database with initial data.
+ * Creates an admin user, an instructor user, a cohort, a student user, a class, an attendance record, an assignment, and a project.
+ * The data is hardcoded and should be replaced with actual data in a production environment.
+ * @returns {Promise<void>} - Resolves when the seeding is complete.
+ */
 async function main() {
   console.log('🌱 Starting database seed...');
 

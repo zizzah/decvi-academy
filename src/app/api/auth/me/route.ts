@@ -1,20 +1,33 @@
+// app/api/auth/me/route.ts - Get current user endpoint
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+import { verifyToken } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth-helpers'
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser()
-    
-    if (!user) {
+    const cookieStore = await cookies()
+    const token = cookieStore.get('auth-token')?.value
+
+    if (!token) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
-    const userData = await prisma.user.findUnique({
-      where: { id: user.userId },
+    // Verify token
+    const payload = await verifyToken(token)
+    if (!payload) {
+      return NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      )
+    }
+
+    // Fetch user with profile
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
       include: {
         student: true,
         instructor: true,
@@ -22,21 +35,22 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    if (!userData) {
+    if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       )
     }
 
+    // Return user data with appropriate profile
     return NextResponse.json({
-      id: userData.id,
-      email: userData.email,
-      role: userData.role,
-      profile: userData.student || userData.instructor || userData.admin,
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      profile: user.student || user.instructor || user.admin,
     })
   } catch (error) {
-    console.error('Get user error:', error)
+    console.error('Auth me error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

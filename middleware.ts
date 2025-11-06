@@ -1,48 +1,76 @@
-
-// ============================================
-// 6. middleware.ts - Next.js Middleware
-// ============================================
-
+// middleware.ts - Fixed with proper role checking
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { jwtVerify } from 'jose'
 
-/**
- * This middleware function checks if the user has a valid auth token.
- * If the user doesn't have a valid token and is trying to access a protected route,
- * it will redirect the user to the login page.
- * If the user has a valid token and is trying to access an auth page,
- * it will redirect the user to the dashboard page.
- * @param {NextRequest} request - The request object from Next.js
- * @returns {NextResponse} - The response object from Next.js
- */
-// middleware.ts - Add admin protection
-export function middleware(request: NextRequest) {
+async function verifyAndDecodeToken(token: string) {
+  try {
+    const secret = new TextEncoder().encode(
+      process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+    )
+    const { payload } = await jwtVerify(token, secret)
+    return payload as { userId: string; email: string; role: string }
+  } catch (error) {
+    console.error('Token verification failed:', error)
+    return null
+  }
+}
+
+export async function middleware(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value
   const { pathname } = request.nextUrl
 
   const publicRoutes = ['/login', '/register', '/forgot-password', '/verify-email']
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
 
-  // Protect admin routes
-  if (pathname.startsWith('/admin')) {
-    if (!token) {
+  // If no token and trying to access protected routes
+  if (!token && !isPublicRoute) {
+    if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
-    // You'll need to decode token here to check role
-    // For now, redirect to login if no token
   }
 
-  if (!token && !isPublicRoute && pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
+  // If token exists, verify and check role
+  if (token) {
+    const payload = await verifyAndDecodeToken(token)
+    
+    // Invalid token - clear cookie and redirect to login
+    if (!payload) {
+      const response = NextResponse.redirect(new URL('/login', request.url))
+      response.cookies.delete('auth-token')
+      return response
+    }
 
-  if (token && isPublicRoute) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    // Prevent authenticated users from accessing public routes
+    if (isPublicRoute) {
+      // Redirect based on role
+      if (payload.role === 'ADMIN') {
+        return NextResponse.redirect(new URL('/admin', request.url))
+      } else if (payload.role === 'STUDENT') {
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+      }
+      // Default to dashboard for other roles
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+
+    // Protect admin routes - only ADMIN role can access
+    if (pathname.startsWith('/admin')) {
+      if (payload.role !== 'ADMIN') {
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+      }
+    }
+
+    // Protect student dashboard - ADMIN should not access student dashboard
+    if (pathname.startsWith('/dashboard')) {
+      if (payload.role === 'ADMIN') {
+        return NextResponse.redirect(new URL('/admin', request.url))
+      }
+    }
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/admin/:path*', '/login', '/register'],
+  matcher: ['/dashboard/:path*', '/admin/:path*', 'auth/login', 'auth/register', 'auth/forgot-password', '/verify-email'],
 }

@@ -1,19 +1,9 @@
-
-// ============================================
-// app/api/auth/login/route.ts - Login API
-// ============================================
-
+// app/api/auth/login/route.ts - Fixed Login API with role-based redirect
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyPassword, generateToken } from '@/lib/auth'
 import { loginSchema } from '@/lib/validations'
 
-/**
- * Login API.
- * 
- * This API logs a user in and returns a JWT token if the login is successful.
- * The token is set as a HTTP-only cookie with a max age of 7 days.
- */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -72,7 +62,15 @@ export async function POST(request: NextRequest) {
       role: user.role,
     })
     
-    // Create response
+    // Determine redirect URL based on role
+    let redirectUrl = '/dashboard' // Default for students
+    if (user.role === 'ADMIN') {
+      redirectUrl = '/admin'
+    } else if (user.role === 'INSTRUCTOR') {
+      redirectUrl = '/instructor'
+    }
+    
+    // Create response with redirect URL
     const response = NextResponse.json({
       message: 'Login successful',
       user: {
@@ -81,6 +79,7 @@ export async function POST(request: NextRequest) {
         role: user.role,
         profile: user.student || user.instructor || user.admin,
       },
+      redirectUrl, // Include redirect URL in response
     })
     
     // Set cookie
