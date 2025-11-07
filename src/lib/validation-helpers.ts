@@ -5,16 +5,27 @@
 
 import { z } from 'zod'
 
+
+const urlRegex =
+  /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/[^\s]*)?$/i
+
+const isoDatetimeRegex =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?(?:Z|[+-]\d{2}:\d{2})?$/
+
+
 export const phoneNumberSchema = z.string().regex(
   /^\+?[1-9]\d{1,14}$/,
   'Invalid phone number format'
 )
 
-export const urlSchema = z.string().url('Invalid URL format')
+export const urlSchema = z.string().regex(
+  urlRegex,
+  'Invalid URL format'
+)
 
 export const dateRangeSchema = z.object({
-  startDate: z.string().datetime(),
-  endDate: z.string().datetime(),
+  startDate: z.string().regex(isoDatetimeRegex, 'Invalid ISO datetime format'),
+  endDate: z.string().regex(isoDatetimeRegex, 'Invalid ISO datetime format'),
 }).refine(
   data => new Date(data.startDate) < new Date(data.endDate),
   { message: 'End date must be after start date' }

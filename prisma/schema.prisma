@@ -36,10 +36,15 @@ model User {
   lastLoginAt        DateTime?
 
   // Relations
-  student       Student?
-  instructor    Instructor?
-  admin         Admin?
-  notifications Notification[]
+  student                  Student?
+  instructor               Instructor?
+  admin                    Admin?
+  notifications            Notification[]
+  conversationParticipants ConversationParticipant[]
+  sentMessages             Message[]
+  messageReactions         MessageReaction[]
+  messageReadReceipts      MessageReadReceipt[]
+  onlineStatus             OnlineStatus?
 
   @@map("users")
 }
@@ -169,8 +174,9 @@ model Cohort {
   updatedAt   DateTime  @updatedAt
 
   // Relations
-  students Student[]
-  classes  Class[]
+  students      Student[]
+  classes       Class[]
+  conversations Conversation[]
 
   @@map("cohorts")
 }
@@ -214,10 +220,11 @@ model Class {
   updatedAt     DateTime     @updatedAt
 
   // Relations
-  cohort     Cohort              @relation(fields: [cohortId], references: [id])
-  instructor Instructor          @relation(fields: [instructorId], references: [id])
-  attendance Attendance[]
-  qrCodes    AttendanceQRCode[]
+  cohort        Cohort              @relation(fields: [cohortId], references: [id])
+  instructor    Instructor          @relation(fields: [instructorId], references: [id])
+  attendance    Attendance[]
+  qrCodes       AttendanceQRCode[]
+  conversations Conversation[]
 
   @@map("classes")
 }
@@ -703,5 +710,144 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
-  @@map("verification_token") // 👈 match your actual table name
+  @@map("verification_token")
+}
+
+// ============================================
+// MESSAGING & CHAT SYSTEM
+// ============================================
+
+enum MessageType {
+  TEXT
+  FILE
+  IMAGE
+  CODE
+  SYSTEM
+}
+
+enum ConversationType {
+  DIRECT          // 1-on-1 chat
+  GROUP           // Group chat
+  COHORT_CHANNEL  // Cohort-wide channel
+  CLASS_CHANNEL   // Class-specific channel
+  ANNOUNCEMENT    // Admin announcements
+}
+
+model Conversation {
+  id          String           @id @default(uuid())
+  name        String?          // For group chats
+  type        ConversationType
+  cohortId    String?
+  classId     String?
+  isArchived  Boolean          @default(false)
+  createdBy   String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  lastMessageAt DateTime?
+
+  // Relations
+  participants ConversationParticipant[]
+  messages     Message[]
+  cohort       Cohort?   @relation(fields: [cohortId], references: [id])
+  class        Class?    @relation(fields: [classId], references: [id])
+
+  @@index([cohortId, type])
+  @@index([classId, type])
+  @@index([lastMessageAt])
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  id             String   @id @default(uuid())
+  conversationId String
+  userId         String
+  role           String   @default("MEMBER") // MEMBER, ADMIN, MODERATOR
+  joinedAt       DateTime @default(now())
+  lastReadAt     DateTime @default(now())
+  isMuted        Boolean  @default(false)
+  isPinned       Boolean  @default(false)
+
+  // Relations
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             String      @id @default(uuid())
+  conversationId String
+  senderId       String
+  content        String      @db.Text
+  type           MessageType @default(TEXT)
+  fileUrl        String?
+  fileName       String?
+  fileSize       Int?
+  isEdited       Boolean     @default(false)
+  isDeleted      Boolean     @default(false)
+  parentId       String?     // For replies/threads
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relations
+  conversation Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User          @relation(fields: [senderId], references: [id])
+  reactions    MessageReaction[]
+  readReceipts MessageReadReceipt[]
+  parent       Message?      @relation("MessageThread", fields: [parentId], references: [id])
+  replies      Message[]     @relation("MessageThread")
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@index([parentId])
+  @@map("messages")
+}
+
+model MessageReaction {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  // Relations
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@map("message_reactions")
+}
+
+model MessageReadReceipt {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+
+  // Relations
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@map("message_read_receipts")
+}
+
+// ============================================
+// ONLINE STATUS TRACKING
+// ============================================
+
+model OnlineStatus {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  isOnline     Boolean  @default(false)
+  lastSeenAt   DateTime @default(now())
+  currentPage  String?
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("online_status")
 }

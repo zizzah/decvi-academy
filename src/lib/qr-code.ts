@@ -18,6 +18,13 @@ export function generateAttendanceQR(classId: string): string {
   return `${classId}-${timestamp}-${random}`
 }
 
+/**
+ * Creates a new attendance QR code for a given class ID.
+ * The QR code will be set to expire after the given number of minutes.
+ * @param {string} classId - the class ID to generate the QR code for
+ * @param {number} [expiryMinutes=15] - the number of minutes after which the QR code will expire
+ * @returns {Promise<Prisma.AttendanceQRCode>>} - a promise that resolves to the created attendance QR code
+ */
 export async function createAttendanceQRCode(classId: string, expiryMinutes: number = 15) {
   const code = generateAttendanceQR(classId)
   const expiresAt = new Date()
@@ -33,6 +40,11 @@ export async function createAttendanceQRCode(classId: string, expiryMinutes: num
   })
 }
 
+/**
+ * Validates an attendance QR code
+ * @param {string} code - the attendance QR code to validate
+ * @returns {Promise<{ valid: boolean; classId?: string }>} - a promise that resolves to an object with a 'valid' property indicating whether the QR code is valid, and an optional 'classId' property containing the class ID associated with the valid QR code
+ */
 export async function validateQRCode(code: string): Promise<{ valid: boolean; classId?: string }> {
   const qrCode = await prisma.attendanceQRCode.findUnique({
     where: { code },
