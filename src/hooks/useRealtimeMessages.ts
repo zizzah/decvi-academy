@@ -1,9 +1,9 @@
 // src/hooks/useRealtimeMessages.ts - Custom hook for real-time messages
 import { useEffect, useState } from 'react'
-import { pusherClient, MessageEvent } from '@/lib/pusher'
+import { pusherClient, MessageEvent, Message, TypingEvent, MessageReactionEvent } from '@/lib/pusher'
 
 export function useRealtimeMessages(conversationId: string) {
-  const [messages, setMessages] = useState<any[]>([])
+  const [messages, setMessages] = useState<Message[]>([])
   const [typingUsers, setTypingUsers] = useState<string[]>([])
 
   useEffect(() => {
@@ -12,12 +12,12 @@ export function useRealtimeMessages(conversationId: string) {
     const channel = pusherClient.subscribe(`conversation-${conversationId}`)
 
     // Listen for new messages
-    channel.bind(MessageEvent.NEW_MESSAGE, (message: any) => {
+    channel.bind(MessageEvent.NEW_MESSAGE, (message: Message) => {
       setMessages((prev) => [...prev, message])
     })
 
     // Listen for typing indicators
-    channel.bind(MessageEvent.USER_TYPING, (data: { userId: string; isTyping: boolean }) => {
+    channel.bind(MessageEvent.USER_TYPING, (data: TypingEvent) => {
       if (data.isTyping) {
         setTypingUsers((prev) => [...new Set([...prev, data.userId])])
       } else {
@@ -26,7 +26,7 @@ export function useRealtimeMessages(conversationId: string) {
     })
 
     // Listen for message reactions
-    channel.bind(MessageEvent.MESSAGE_REACTION, (data: any) => {
+    channel.bind(MessageEvent.MESSAGE_REACTION, (data: MessageReactionEvent) => {
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === data.messageId
