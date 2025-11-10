@@ -1,39 +1,23 @@
-// src/app/api/messages/conversations/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth-helpers'
-import { ConversationType } from '@prisma/client'
+// app/api/messages/conversations/route.ts
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
 
-// Type definitions
-interface CreateConversationBody {
-  type: ConversationType
-  name?: string
-  participantIds: string[]
-  cohortId?: string
-  classId?: string
-}
-
-/**
- * GET /api/messages/conversations
- * Fetch all conversations for the current user
- */
-export async function GET(request: NextRequest) {
+// Get all conversations for current user
+export async function GET(req: Request) {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const session = await getServerSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const { searchParams } = new URL(request.url)
-    const type = searchParams.get('type') as ConversationType | null
 
     const conversations = await prisma.conversation.findMany({
       where: {
         participants: {
-          some: { userId: user.userId }
+          some: {
+            userId: parseInt(session.user.id),
+          },
         },
-        isArchived: false,
-        ...(type && { type })
       },
       include: {
         participants: {
@@ -41,95 +25,70 @@ export async function GET(request: NextRequest) {
             user: {
               select: {
                 id: true,
+                username: true,
                 email: true,
-                student: { select: { firstName: true, lastName: true, photoUrl: true } },
-                instructor: { select: { firstName: true, lastName: true, photoUrl: true } },
-                admin: { select: { firstName: true, lastName: true } }
-              }
-            }
-          }
+                avatar: true,
+                role: true,
+              },
+            },
+          },
         },
         messages: {
-          orderBy: { createdAt: 'desc' },
           take: 1,
+          orderBy: {
+            createdAt: 'desc',
+          },
           include: {
             sender: {
               select: {
                 id: true,
-                email: true,
-                student: { select: { firstName: true, lastName: true } },
-                instructor: { select: { firstName: true, lastName: true } }
-              }
-            }
-          }
+                username: true,
+                avatar: true,
+              },
+            },
+          },
         },
-        cohort: { select: { name: true } },
-        class: { select: { title: true } }
       },
-      orderBy: { lastMessageAt: 'desc' }
-    })
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    });
 
-    // Calculate unread count for each conversation
-    const conversationsWithUnread = await Promise.all(
-      conversations.map(async (conv) => {
-        const participant = conv.participants.find(p => p.userId === user.userId)
-        const unreadCount = await prisma.message.count({
-          where: {
-            conversationId: conv.id,
-            createdAt: { gt: participant?.lastReadAt || new Date(0) },
-            senderId: { not: user.userId }
-          }
-        })
-
-        return {
-          ...conv,
-          unreadCount
-        }
-      })
-    )
-
-    return NextResponse.json(conversationsWithUnread)
+    return NextResponse.json(conversations);
   } catch (error) {
-    console.error('Fetch conversations error:', error)
+    console.error('Error fetching conversations:', error);
     return NextResponse.json(
       { error: 'Failed to fetch conversations' },
       { status: 500 }
-    )
+    );
   }
 }
 
-/**
- * POST /api/messages/conversations
- * Create a new conversation
- */
-export async function POST(request: NextRequest) {
+// Create new conversation
+export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const session = await getServerSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json() as CreateConversationBody
-    const { type, name, participantIds, cohortId, classId } = body
+    const { participantIds, isGroup, name } = await req.json();
+    
+    // Add current user to participants
+    const allParticipants = [...new Set([...participantIds, parseInt(session.user.id)])];
 
-    // Validate participants
-    if (!participantIds || participantIds.length === 0) {
-      return NextResponse.json(
-        { error: 'At least one participant required' },
-        { status: 400 }
-      )
-    }
-
-    // For DIRECT conversations, check if one already exists
-    if (type === ConversationType.DIRECT && participantIds.length === 1) {
-      const existingConversation = await prisma.conversation.findFirst({
+    // Check if one-on-one conversation already exists
+    if (!isGroup && allParticipants.length === 2) {
+      const existing = await prisma.conversation.findFirst({
         where: {
-          type: 'DIRECT',
+          isGroup: false,
           participants: {
             every: {
-              userId: { in: [user.userId, participantIds[0]] }
-            }
-          }
+              userId: {
+                in: allParticipants,
+              },
+            },
+          },
         },
         include: {
           participants: {
@@ -137,35 +96,31 @@ export async function POST(request: NextRequest) {
               user: {
                 select: {
                   id: true,
+                  username: true,
                   email: true,
-                  student: { select: { firstName: true, lastName: true, photoUrl: true } },
-                  instructor: { select: { firstName: true, lastName: true, photoUrl: true } }
-                }
-              }
-            }
-          }
-        }
-      })
+                  avatar: true,
+                  role: true,
+                },
+              },
+            },
+          },
+        },
+      });
 
-      if (existingConversation) {
-        return NextResponse.json(existingConversation)
+      if (existing) {
+        return NextResponse.json(existing);
       }
     }
 
-    // Create new conversation
     const conversation = await prisma.conversation.create({
       data: {
-        type,
+        isGroup,
         name,
-        cohortId,
-        classId,
-        createdBy: user.userId,
         participants: {
-          create: [
-            { userId: user.userId, role: 'ADMIN' },
-            ...participantIds.map((id: string) => ({ userId: id, role: 'MEMBER' }))
-          ]
-        }
+          create: allParticipants.map((userId) => ({
+            userId,
+          })),
+        },
       },
       include: {
         participants: {
@@ -173,22 +128,23 @@ export async function POST(request: NextRequest) {
             user: {
               select: {
                 id: true,
+                username: true,
                 email: true,
-                student: { select: { firstName: true, lastName: true, photoUrl: true } },
-                instructor: { select: { firstName: true, lastName: true, photoUrl: true } }
-              }
-            }
-          }
-        }
-      }
-    })
+                avatar: true,
+                role: true,
+              },
+            },
+          },
+        },
+      },
+    });
 
-    return NextResponse.json(conversation, { status: 201 })
+    return NextResponse.json(conversation);
   } catch (error) {
-    console.error('Create conversation error:', error)
+    console.error('Error creating conversation:', error);
     return NextResponse.json(
       { error: 'Failed to create conversation' },
       { status: 500 }
-    )
+    );
   }
 }

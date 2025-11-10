@@ -4,85 +4,57 @@
 
 // src/app/api/messages/send/route.ts
 
-import { getCurrentUser } from "@/lib/auth-helpers"
-import { NextRequest, NextResponse } from "next/server"
-import { prisma } from '@/lib/prisma'
 
+//app/api/messages/users/route.ts
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
 
-/**
- * POST /api/messages/send
- * Send a new message
- */
-export async function POST(request: NextRequest) {
+// Search users for starting a conversation
+export async function GET(req: Request) {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const session = await getServerSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json()
-    const { conversationId, content, type = 'TEXT', fileUrl, fileName, fileSize, parentId } = body
+    const { searchParams } = new URL(req.url);
+    const search = searchParams.get('search') || '';
+    const role = searchParams.get('role');
 
-    if (!content && !fileUrl) {
-      return NextResponse.json(
-        { error: 'Message content or file required' },
-        { status: 400 }
-      )
-    }
-
-    // Check if user is participant
-    const participant = await prisma.conversationParticipant.findUnique({
+    const users = await prisma.user.findMany({
       where: {
-        conversationId_userId: {
-          conversationId,
-          userId: user.userId
-        }
-      }
-    })
-
-    if (!participant) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    // Create message
-    const message = await prisma.message.create({
-      data: {
-        conversationId,
-        senderId: user.userId,
-        content,
-        type,
-        fileUrl,
-        fileName,
-        fileSize,
-        parentId
+        AND: [
+          {
+            id: {
+              not: parseInt(session.user.id),
+            },
+          },
+          {
+            OR: [
+              { username: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } },
+            ],
+          },
+          ...(role ? [{ role }] : []),
+        ],
       },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            email: true,
-            student: { select: { firstName: true, lastName: true, photoUrl: true } },
-            instructor: { select: { firstName: true, lastName: true, photoUrl: true } }
-          }
-        }
-      }
-    })
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        avatar: true,
+        role: true,
+      },
+      take: 20,
+    });
 
-    // Update conversation last message timestamp
-    await prisma.conversation.update({
-      where: { id: conversationId },
-      data: { lastMessageAt: new Date() }
-    })
-
-    // TODO: Send real-time notification to other participants
-    // This will be handled by WebSocket/Pusher in the next step
-
-    return NextResponse.json(message, { status: 201 })
+    return NextResponse.json(users);
   } catch (error) {
-    console.error('Send message error:', error)
+    console.error('Error searching users:', error);
     return NextResponse.json(
-      { error: 'Failed to send message' },
+      { error: 'Failed to search users' },
       { status: 500 }
-    )
+    );
   }
 }

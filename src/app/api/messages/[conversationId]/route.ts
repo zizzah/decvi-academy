@@ -1,120 +1,126 @@
 
+// app/api/messages/[conversationId]/route.ts
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import Pusher from 'pusher';
 
-// src/app/api/messages/[conversationId]/route.ts
+const pusher = new Pusher({
+  appId: process.env.PUSHER_APP_ID!,
+  key: process.env.PUSHER_KEY!,
+  secret: process.env.PUSHER_SECRET!,
+  cluster: process.env.PUSHER_CLUSTER!,
+  useTLS: true,
+});
 
-import { getCurrentUser } from "@/lib/auth-helpers"
-import { prisma } from "@/lib/prisma"
-import { NextRequest, NextResponse } from "next/server"
-
-/**
- * GET /api/messages/[conversationId]
- * Fetch messages for a conversation
- */
-
-
-
-// src/app/api/messages/[conversationId]/route.ts
-/**
- * GET /api/messages/[conversationId]
- * Fetch messages for a conversation
- */
+// Get messages for a conversation
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ conversationId: string }> }
+  req: Request,
+  { params }: { params: { conversationId: string } }
 ) {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const session = await getServerSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { conversationId } = await params
-    const { searchParams } = new URL(request.url)
-    const cursor = searchParams.get('cursor')
-    const limit = parseInt(searchParams.get('limit') || '50')
-
-    // Check if user is participant
-    const participant = await prisma.conversationParticipant.findUnique({
-      where: {
-        conversationId_userId: {
-          conversationId,
-          userId: user.userId
-        }
-      }
-    })
-
-    if (!participant) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const conversationId = parseInt(params.conversationId);
+    const { searchParams } = new URL(req.url);
+    const cursor = searchParams.get('cursor');
+    const limit = 50;
 
     const messages = await prisma.message.findMany({
       where: {
         conversationId,
-        isDeleted: false,
-        ...(cursor && { id: { lt: cursor } })
       },
       include: {
         sender: {
           select: {
             id: true,
-            email: true,
-            student: { select: { firstName: true, lastName: true, photoUrl: true } },
-            instructor: { select: { firstName: true, lastName: true, photoUrl: true } }
-          }
+            username: true,
+            avatar: true,
+            role: true,
+          },
         },
-        reactions: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                student: { select: { firstName: true, lastName: true } },
-                instructor: { select: { firstName: true, lastName: true } }
-              }
-            }
-          }
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: limit,
+      ...(cursor && {
+        skip: 1,
+        cursor: {
+          id: parseInt(cursor),
         },
-        replies: {
-          take: 3,
-          include: {
-            sender: {
-              select: {
-                id: true,
-                student: { select: { firstName: true, lastName: true } },
-                instructor: { select: { firstName: true, lastName: true } }
-              }
-            }
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-      take: limit
-    })
-
-    // Update last read timestamp
-    await prisma.conversationParticipant.update({
-      where: {
-        conversationId_userId: {
-          conversationId,
-          userId: user.userId
-        }
-      },
-      data: { lastReadAt: new Date() }
-    })
-
-    const hasMore = messages.length === limit
-    const nextCursor = hasMore ? messages[messages.length - 1].id : null
+      }),
+    });
 
     return NextResponse.json({
-      messages: messages.reverse(),
-      nextCursor,
-      hasMore
-    })
+      messages,
+      nextCursor: messages.length === limit ? messages[messages.length - 1].id : null,
+    });
   } catch (error) {
-    console.error('Fetch messages error:', error)
+    console.error('Error fetching messages:', error);
     return NextResponse.json(
       { error: 'Failed to fetch messages' },
       { status: 500 }
-    )
+    );
   }
 }
 
+// Send a message
+export async function POST(
+  req: Request,
+  { params }: { params: { conversationId: string } }
+) {
+  try {
+    const session = await getServerSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const conversationId = parseInt(params.conversationId);
+    const { content, fileUrl, fileType } = await req.json();
+
+    const message = await prisma.message.create({
+      data: {
+        content,
+        fileUrl,
+        fileType,
+        conversationId,
+        senderId: parseInt(session.user.id),
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            username: true,
+            avatar: true,
+            role: true,
+          },
+        },
+      },
+    });
+
+    // Update conversation's last message
+    await prisma.conversation.update({
+      where: { id: conversationId },
+      data: {
+        lastMessage: content,
+        lastMessageAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+
+    // Trigger Pusher event
+    await pusher.trigger(`conversation-${conversationId}`, 'new-message', message);
+
+    return NextResponse.json(message);
+  } catch (error) {
+    console.error('Error sending message:', error);
+    return NextResponse.json(
+      { error: 'Failed to send message' },
+      { status: 500 }
+    );
+  }
+}
