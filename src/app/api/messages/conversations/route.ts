@@ -2,6 +2,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth-helpers'
+import { ConversationType } from '@prisma/client'
+
+// Type definitions
+interface CreateConversationBody {
+  type: ConversationType
+  name?: string
+  participantIds: string[]
+  cohortId?: string
+  classId?: string
+}
 
 /**
  * GET /api/messages/conversations
@@ -15,7 +25,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const type = searchParams.get('type')
+    const type = searchParams.get('type') as ConversationType | null
 
     const conversations = await prisma.conversation.findMany({
       where: {
@@ -23,7 +33,7 @@ export async function GET(request: NextRequest) {
           some: { userId: user.userId }
         },
         isArchived: false,
-        ...(type && { type: type as any })
+        ...(type && { type })
       },
       include: {
         participants: {
@@ -99,7 +109,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
+    const body = await request.json() as CreateConversationBody
     const { type, name, participantIds, cohortId, classId } = body
 
     // Validate participants
@@ -111,7 +121,7 @@ export async function POST(request: NextRequest) {
     }
 
     // For DIRECT conversations, check if one already exists
-    if (type === 'DIRECT' && participantIds.length === 1) {
+    if (type === ConversationType.DIRECT && participantIds.length === 1) {
       const existingConversation = await prisma.conversation.findFirst({
         where: {
           type: 'DIRECT',
