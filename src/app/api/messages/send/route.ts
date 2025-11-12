@@ -1,49 +1,38 @@
-
-
-
-
-// src/app/api/messages/send/route.ts
-
-
 //app/api/messages/users/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
+import { getCurrentUser } from '@/lib/auth-helpers';
+import { UserRole } from '@prisma/client';
 
 // Search users for starting a conversation
 export async function GET(req: Request) {
   try {
-    const session = await getServerSession();
-    if (!session?.user?.id) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search') || '';
-    const role = searchParams.get('role');
+    const roleParam = searchParams.get('role');
+    const role = roleParam ? (roleParam as UserRole) : undefined;
 
     const users = await prisma.user.findMany({
       where: {
         AND: [
           {
             id: {
-              not: parseInt(session.user.id),
+              not: user.userId,
             },
           },
           {
-            OR: [
-              { username: { contains: search, mode: 'insensitive' } },
-              { email: { contains: search, mode: 'insensitive' } },
-            ],
+            email: { contains: search, mode: 'insensitive' },
           },
           ...(role ? [{ role }] : []),
         ],
       },
       select: {
         id: true,
-        username: true,
         email: true,
-        avatar: true,
         role: true,
       },
       take: 20,

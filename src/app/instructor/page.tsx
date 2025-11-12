@@ -6,8 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 import {
   Users,
   Calendar,
@@ -26,6 +24,7 @@ import {
   Play,
   Video
 } from 'lucide-react'
+import Link from 'next/link'
 
 interface ClassSession {
   id: string
@@ -194,6 +193,7 @@ export default function InstructorDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [role, setRole] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchData() {
@@ -211,7 +211,7 @@ export default function InstructorDashboard() {
           router.push('/unauthorized')
           return
         }
-        
+        setRole(userData.role)
         if (!userData.profile?.id) {
           console.error('No instructor profile found')
           setLoading(false)
@@ -284,6 +284,9 @@ export default function InstructorDashboard() {
               </Button>
               <Button variant="outline">
                 <Video className="w-4 h-4 mr-2" />
+                {role  && (
+  <Link href="/live-classes">Manage Classes</Link>
+)}
                 Join Meeting
               </Button>
             </div>
