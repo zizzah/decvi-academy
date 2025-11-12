@@ -22,7 +22,7 @@ export async function GET(req: Request) {
             userId: user.userId,
           },
         },
-        ...(type && { type: type as any }),
+        ...(type && { type: type as 'DIRECT' | 'GROUP' | 'COHORT_CHANNEL' | 'CLASS_CHANNEL' | 'ANNOUNCEMENT' }),
       },
       include: {
         participants: {
