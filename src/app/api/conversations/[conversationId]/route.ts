@@ -15,7 +15,7 @@ const pusher = new Pusher({
 // Get messages for a conversation
 export async function GET(
   req: Request,
-  { params }: { params: { conversationId: string } }
+  { params }: { params: Promise<{ conversationId: string }> } // Changed to Promise
 ) {
   try {
     const user = await getCurrentUser();
@@ -23,7 +23,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const conversationId = params.conversationId;
+    const { conversationId } = await params; // Await params
     const { searchParams } = new URL(req.url);
     const cursor = searchParams.get('cursor');
     const limit = 50;
@@ -117,7 +117,7 @@ export async function GET(
 // Send a message
 export async function POST(
   req: Request,
-  { params }: { params: { conversationId: string } }
+  { params }: { params: Promise<{ conversationId: string }> } // Changed to Promise
 ) {
   try {
     const user = await getCurrentUser();
@@ -125,7 +125,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const conversationId = params.conversationId;
+    const { conversationId } = await params; // Await params
     const { content, fileUrl, fileName, fileSize, type = 'TEXT', parentId } = await req.json();
 
     // Verify user is participant in this conversation
