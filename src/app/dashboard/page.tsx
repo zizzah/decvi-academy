@@ -22,6 +22,7 @@ import {
   BarChart3,
   Settings
 } from 'lucide-react'
+import Link from 'next/link'
 
 interface DashboardData {
   student: {
@@ -71,6 +72,7 @@ function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
     { icon: <BarChart3 className="w-5 h-5" />, label: 'Progress' },
     { icon: <Award className="w-5 h-5" />, label: 'Achievements' },
     { icon: <Settings className="w-5 h-5" />, label: 'Settings' },
+    
   ]
 
   const handleLogout = async () => {
@@ -280,6 +282,8 @@ export default function StudentDashboard() {
                 <div>
                   <div className="text-2xl font-bold">{data.stats.currentStreak}</div>
                   <div className="text-sm text-blue-100">Day Streak</div>
+                    <Link href="/live-classes">Manage Classes</Link>
+
                 </div>
               </div>
             </div>

@@ -1,14 +1,8 @@
-// ============================================
-// lib/auth-helpers.ts - Server-side auth helpers
-// ============================================
-
+// lib/auth-helpers.ts
 import { cookies } from 'next/headers'
 import { verifyToken } from './auth'
+import { prisma } from './prisma'
 
-/**
- * Get the current authenticated user from cookies
- * Use this in Server Components and API routes
- */
 export async function getCurrentUser() {
   try {
     const cookieStore = await cookies()
@@ -26,17 +20,41 @@ export async function getCurrentUser() {
   }
 }
 
-/**
- * Check if user is authenticated
- */
+// ✅ NEW: Get current instructor profile
+export async function getCurrentInstructor() {
+  const session = await getCurrentUser();
+  
+  if (!session?.userId || session.role !== 'INSTRUCTOR') {
+    return null;
+  }
+
+  const instructor = await prisma.instructor.findUnique({
+    where: { userId: session.userId }
+  });
+
+  return instructor;
+}
+
+// ✅ NEW: Get current student profile
+export async function getCurrentStudent() {
+  const session = await getCurrentUser();
+  
+  if (!session?.userId || session.role !== 'STUDENT') {
+    return null;
+  }
+
+  const student = await prisma.student.findUnique({
+    where: { userId: session.userId }
+  });
+
+  return student;
+}
+
 export async function isAuthenticated(): Promise<boolean> {
   const user = await getCurrentUser()
   return user !== null
 }
 
-/**
- * Check if user has a specific role
- */
 export async function hasRole(role: string): Promise<boolean> {
   const user = await getCurrentUser()
   return user?.role === role

@@ -54,7 +54,7 @@ interface LiveClass {
 }
 
 interface Course {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -81,8 +81,8 @@ export default function LiveClassManagement() {
   const [loading, setLoading] = useState(false);
   const [userRole] = useState<UserRole>('Instructor');
   const [courses] = useState<Course[]>([
-    { id: 1, name: 'Web Development' },
-    { id: 2, name: 'Data Science' },
+    { id: 'cohort-1-web-dev', name: 'Web Development' },
+    { id: 'cohort-1-web-dev', name: 'Data Science' },
   ]);
 
   const [formData, setFormData] = useState<FormData>({
@@ -97,6 +97,12 @@ export default function LiveClassManagement() {
 
   useEffect(() => {
     fetchLiveClasses();
+    
+    // Debug: Check if we're authenticated
+    fetch('/api/auth/me', { credentials: 'same-origin' })
+      .then(res => res.json())
+      .then(data => console.log('Current user:', data))
+      .catch(err => console.error('Auth check failed:', err));
   }, []);
 
   // Subscribe to live class updates
@@ -129,7 +135,9 @@ export default function LiveClassManagement() {
 
   const fetchLiveClasses = async () => {
     try {
-      const res = await fetch('/api/live-classes');
+      const res = await fetch('/api/live-classes', {
+        credentials: 'same-origin',
+      });
       if (!res.ok) throw new Error('Failed to fetch live classes');
       const data: LiveClass[] = await res.json();
       setLiveClasses(data);
@@ -143,18 +151,26 @@ export default function LiveClassManagement() {
     try {
       const res = await fetch('/api/live-classes', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin',
         body: JSON.stringify(formData),
       });
       
-      if (!res.ok) throw new Error('Failed to create live class');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to create live class');
+      }
       
       const newClass: LiveClass = await res.json();
       setLiveClasses([newClass, ...liveClasses]);
       setShowCreateModal(false);
       resetForm();
+      alert('Live class created successfully!');
     } catch (error) {
       console.error('Error creating live class:', error);
+      alert(error instanceof Error ? error.message : 'Failed to create live class');
     } finally {
       setLoading(false);
     }
@@ -164,9 +180,13 @@ export default function LiveClassManagement() {
     try {
       const res = await fetch(`/api/live-classes/${classId}/start`, {
         method: 'POST',
+        credentials: 'same-origin',
       });
       
-      if (!res.ok) throw new Error('Failed to start class');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to start class');
+      }
       
       const updatedClass: LiveClass = await res.json();
       setLiveClasses(
@@ -179,6 +199,7 @@ export default function LiveClassManagement() {
       }
     } catch (error) {
       console.error('Error starting class:', error);
+      alert(error instanceof Error ? error.message : 'Failed to start class');
     }
   };
 
@@ -186,13 +207,19 @@ export default function LiveClassManagement() {
     try {
       const res = await fetch(`/api/live-classes/${classId}/enroll`, {
         method: 'POST',
+        credentials: 'same-origin',
       });
       
-      if (!res.ok) throw new Error('Failed to enroll in class');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to enroll in class');
+      }
       
       fetchLiveClasses();
+      alert('Successfully enrolled in class!');
     } catch (error) {
       console.error('Error enrolling in class:', error);
+      alert(error instanceof Error ? error.message : 'Failed to enroll in class');
     }
   };
 
@@ -202,13 +229,19 @@ export default function LiveClassManagement() {
     try {
       const res = await fetch(`/api/live-classes/${classId}`, {
         method: 'DELETE',
+        credentials: 'same-origin',
       });
       
-      if (!res.ok) throw new Error('Failed to delete class');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to delete class');
+      }
       
       setLiveClasses(liveClasses.filter((c) => c.id !== classId));
+      alert('Class deleted successfully!');
     } catch (error) {
       console.error('Error deleting class:', error);
+      alert(error instanceof Error ? error.message : 'Failed to delete class');
     }
   };
 

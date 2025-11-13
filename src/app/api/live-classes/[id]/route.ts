@@ -1,42 +1,161 @@
-
-
-
+// app/api/live-classes/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import Pusher from 'pusher';
 import { getCurrentUser } from '@/lib/auth-helpers';
-const pusher = new Pusher({
-  appId: process.env.PUSHER_APP_ID!,
-  key: process.env.PUSHER_KEY!,
-  secret: process.env.PUSHER_SECRET!,
-  cluster: process.env.PUSHER_CLUSTER!,
-  useTLS: true,
-});
 
-// Get a specific live class
-export async function GET(
+// Delete a live class (Instructor only)
+export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getCurrentUser();
+    
     if (!session?.userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized: Please log in' }, 
+        { status: 401 }
+      );
     }
 
-    const liveClass = await prisma.liveClass.findUnique({
-      where: {
-        id: parseInt(params.id),
+    if (session.role !== 'INSTRUCTOR') {
+      return NextResponse.json(
+        { error: 'Unauthorized: Only instructors can delete classes' }, 
+        { status: 403 }
+      );
+    }
+
+    // ✅ Get the instructor record
+    const instructor = await prisma.instructor.findUnique({
+      where: { userId: session.userId }
+    });
+
+    if (!instructor) {
+      return NextResponse.json(
+        { error: 'Instructor profile not found' },
+        { status: 404 }
+      );
+    }
+
+    const { id } = await params;
+
+    // Verify the class belongs to the instructor
+    const existingClass = await prisma.liveClass.findUnique({
+      where: { id },
+    });
+
+    if (!existingClass) {
+      return NextResponse.json(
+        { error: 'Live class not found' },
+        { status: 404 }
+      );
+    }
+
+    // ✅ Check using instructor.id, not session.userId
+    if (existingClass.instructorId !== instructor.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized: You can only delete your own classes' },
+        { status: 403 }
+      );
+    }
+
+    await prisma.liveClass.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true, message: 'Class deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting class:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete class' },
+      { status: 500 }
+    );
+  }
+}
+
+// Update a live class (Instructor only)
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getCurrentUser();
+    
+    if (!session?.userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Please log in' }, 
+        { status: 401 }
+      );
+    }
+
+    if (session.role !== 'INSTRUCTOR') {
+      return NextResponse.json(
+        { error: 'Unauthorized: Only instructors can update classes' }, 
+        { status: 403 }
+      );
+    }
+
+    // ✅ Get the instructor record
+    const instructor = await prisma.instructor.findUnique({
+      where: { userId: session.userId }
+    });
+
+    if (!instructor) {
+      return NextResponse.json(
+        { error: 'Instructor profile not found' },
+        { status: 404 }
+      );
+    }
+
+    const { id } = await params;
+    const body = await req.json();
+
+    // Verify the class belongs to the instructor
+    const existingClass = await prisma.liveClass.findUnique({
+      where: { id },
+    });
+
+    if (!existingClass) {
+      return NextResponse.json(
+        { error: 'Live class not found' },
+        { status: 404 }
+      );
+    }
+
+    // ✅ Check using instructor.id, not session.userId
+    if (existingClass.instructorId !== instructor.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized: You can only update your own classes' },
+        { status: 403 }
+      );
+    }
+
+    const updatedClass = await prisma.liveClass.update({
+      where: { id },
+      data: {
+        ...(body.title && { title: body.title }),
+        ...(body.description !== undefined && { description: body.description }),
+        ...(body.scheduledAt && { scheduledAt: new Date(body.scheduledAt) }),
+        ...(body.duration && { duration: parseInt(body.duration) }),
+        ...(body.meetingLink !== undefined && { meetingLink: body.meetingLink }),
+        ...(body.maxStudents !== undefined && { 
+          maxStudents: body.maxStudents ? parseInt(body.maxStudents) : null 
+        }),
+        ...(body.status && { status: body.status }),
       },
       include: {
-        course: true,
+        cohort: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         instructor: {
           select: {
             id: true,
-            username: true,
-            email: true,
-            avatar: true,
-            bio: true,
+            firstName: true,
+            lastName: true,
+            photoUrl: true,
           },
         },
         enrollments: {
@@ -44,8 +163,9 @@ export async function GET(
             student: {
               select: {
                 id: true,
-                username: true,
-                avatar: true,
+                firstName: true,
+                lastName: true,
+                photoUrl: true,
               },
             },
           },
@@ -58,104 +178,11 @@ export async function GET(
       },
     });
 
-    if (!liveClass) {
-      return NextResponse.json({ error: 'Live class not found' }, { status: 404 });
-    }
-
-    return NextResponse.json(liveClass);
+    return NextResponse.json(updatedClass);
   } catch (error) {
-    console.error('Error fetching live class:', error);
+    console.error('Error updating class:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch live class' },
-      { status: 500 }
-    );
-  }
-}
-
-// Update live class (Instructor only)
-export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getCurrentUser();
-    if (!session?.userId|| session.role !== 'Instructor') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const classId = parseInt(params.id);
-    const updates = await req.json();
-
-    // Verify ownership
-    const existing = await prisma.liveClass.findUnique({
-      where: { id: classId },
-      select: { instructorId: true },
-    });
-
-    if (!existing || existing.instructorId !== parseInt(session.userId)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-
-    const liveClass = await prisma.liveClass.update({
-      where: { id: classId },
-      data: updates,
-      include: {
-        course: true,
-        instructor: {
-          select: {
-            id: true,
-            username: true,
-            avatar: true,
-          },
-        },
-      },
-    });
-
-    // Notify enrolled students of changes
-    await pusher.trigger(`live-class-${classId}`, 'class-updated', liveClass);
-
-    return NextResponse.json(liveClass);
-  } catch (error) {
-    console.error('Error updating live class:', error);
-    return NextResponse.json(
-      { error: 'Failed to update live class' },
-      { status: 500 }
-    );
-  }
-}
-
-// Delete live class (Instructor only)
-export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getCurrentUser();
-    if (!session?.userId || session.role !== 'Instructor') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const classId = parseInt(params.id);
-
-    // Verify ownership
-    const existing = await prisma.liveClass.findUnique({
-      where: { id: classId },
-      select: { instructorId: true },
-    });
-
-    if (!existing || existing.instructorId !== parseInt(session.userId)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-
-    await prisma.liveClass.delete({
-      where: { id: classId },
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting live class:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete live class' },
+      { error: 'Failed to update class' },
       { status: 500 }
     );
   }
