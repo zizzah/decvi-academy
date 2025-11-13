@@ -14,7 +14,7 @@ const pusher = new Pusher({
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getCurrentUser();
@@ -22,10 +22,10 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const classId = parseInt(params.id);
+    const { id } = await params;
 
     const liveClass = await prisma.liveClass.update({
-      where: { id: classId },
+      where: { id },
       data: { status: 'LIVE' },
       include: {
         enrollments: {
@@ -37,8 +37,8 @@ export async function POST(
     });
 
     // Notify all enrolled students
-    await pusher.trigger(`live-class-${classId}`, 'class-started', {
-      classId,
+    await pusher.trigger(`live-class-${id}`, 'class-started', {
+      classId: id,
       meetingLink: liveClass.meetingLink,
     });
 
