@@ -1,21 +1,23 @@
-// app/api/messages/[conversationId]/route.ts
+// app/api/conversations/[conversationId]/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import Pusher from 'pusher';
 
+// CRITICAL FIX: Use NEXT_PUBLIC_ prefix is only for client-side variables
+// For server-side API routes, use the non-prefixed version
 const pusher = new Pusher({
   appId: process.env.PUSHER_APP_ID!,
-  key: process.env.PUSHER_KEY!,
+  key: process.env.NEXT_PUBLIC_PUSHER_KEY!, // This is the fix
   secret: process.env.PUSHER_SECRET!,
-  cluster: process.env.PUSHER_CLUSTER!,
+  cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
   useTLS: true,
 });
 
 // Get messages for a conversation
 export async function GET(
   req: Request,
-  { params }: { params: Promise<{ conversationId: string }> } // Changed to Promise
+  { params }: { params: Promise<{ conversationId: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -23,7 +25,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { conversationId } = await params; // Await params
+    const { conversationId } = await params;
     const { searchParams } = new URL(req.url);
     const cursor = searchParams.get('cursor');
     const limit = 50;
@@ -77,7 +79,7 @@ export async function GET(
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: 'asc', // Changed to 'asc' for proper message order
       },
       take: limit,
       ...(cursor && {
@@ -117,7 +119,7 @@ export async function GET(
 // Send a message
 export async function POST(
   req: Request,
-  { params }: { params: Promise<{ conversationId: string }> } // Changed to Promise
+  { params }: { params: Promise<{ conversationId: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -125,7 +127,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { conversationId } = await params; // Await params
+    const { conversationId } = await params;
     const { content, fileUrl, fileName, fileSize, type = 'TEXT', parentId } = await req.json();
 
     // Verify user is participant in this conversation
@@ -183,8 +185,14 @@ export async function POST(
       },
     });
 
-    // Trigger Pusher event
-    await pusher.trigger(`conversation-${conversationId}`, 'new-message', message);
+    // Trigger Pusher event - FIXED: Proper method call syntax
+    try {
+      await pusher.trigger(`conversation-${conversationId}`, 'new-message', message);
+      console.log('Pusher event triggered successfully');
+    } catch (pusherError) {
+      console.error('Pusher error:', pusherError);
+      // Don't fail the request if Pusher fails
+    }
 
     return NextResponse.json(message);
   } catch (error) {

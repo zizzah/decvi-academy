@@ -14,7 +14,49 @@ export async function GET(req: Request) {
     const role = searchParams.get('role'); // Optional role filter
     const limit = parseInt(searchParams.get('limit') || '20');
 
-    const whereClause: any = {
+    const whereClause: {
+      id: {
+        not: string;
+      };
+      isVerified: boolean;
+      OR?: Array<{
+        student?: {
+          firstName?: {
+            contains: string;
+            mode: 'insensitive';
+          };
+          lastName?: {
+            contains: string;
+            mode: 'insensitive';
+          };
+        };
+        instructor?: {
+          firstName?: {
+            contains: string;
+            mode: 'insensitive';
+          };
+          lastName?: {
+            contains: string;
+            mode: 'insensitive';
+          };
+        };
+        admin?: {
+          firstName?: {
+            contains: string;
+            mode: 'insensitive';
+          };
+          lastName?: {
+            contains: string;
+            mode: 'insensitive';
+          };
+        };
+        email?: {
+          contains: string;
+          mode: 'insensitive';
+        };
+      }>;
+      role?: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
+    } = {
       id: {
         not: user.userId, // Exclude current user
       },
