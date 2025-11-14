@@ -1,12 +1,10 @@
-# Message Page Implementation
+# TODO: Add UI to Start New Conversations on Message Page
 
-## Tasks
-- [x] Create basic page structure with sidebar and main chat area
-- [x] Implement conversation list fetching and display with unread counts
-- [x] Add conversation selection functionality
-- [x] Implement message display for selected conversation
-- [x] Add message input field with send functionality
-- [x] Integrate real-time message updates using useRealtimeMessages hook
-- [x] Add typing indicators
-- [x] Style the interface for responsiveness and user experience
-- [x] Test real-time messaging functionality
+## Steps to Complete:
+- [x] Create API route `/api/users/search` for searching users to add as recipients
+- [x] Create `NewConversationModal` component for user selection and conversation creation
+- [x] Update `src/app/message/page.tsx` to include "New Message" button and modal integration
+- [x] Test the new conversation creation flow
+- [x] Verify user search and selection functionality
+- [x] Ensure real-time updates work with new conversations
+- [x] Handle edge cases (e.g., duplicate direct conversations)

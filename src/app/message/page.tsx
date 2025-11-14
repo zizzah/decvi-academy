@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { useRealtimeMessages } from '@/hooks/useRealtimeMessages'
 import { Message } from '@/lib/pusher'
+import NewConversationModal from '@/components/NewConversationModal'
 
 interface ConversationWithUnread {
   id: string
@@ -31,6 +33,7 @@ export default function MessagePage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Fetch conversations on mount
@@ -132,12 +135,41 @@ export default function MessagePage() {
     return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
+  const handleCreateConversation = async (participantIds: string[], type: 'DIRECT' | 'GROUP', name?: string) => {
+    try {
+      const response = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          participantIds,
+          type,
+          name,
+        }),
+      })
+
+      if (response.ok) {
+        const newConversation = await response.json()
+        setSelectedConversation(newConversation.id)
+        fetchConversations() // Refresh the conversations list
+      } else {
+        console.error('Failed to create conversation')
+      }
+    } catch (error) {
+      console.error('Error creating conversation:', error)
+    }
+  }
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Conversations Sidebar */}
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
+          <Button onClick={() => setIsModalOpen(true)} size="sm">
+            New Message
+          </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -252,6 +284,13 @@ export default function MessagePage() {
           </div>
         )}
       </div>
+
+      {/* New Conversation Modal */}
+      <NewConversationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreateConversation={handleCreateConversation}
+      />
     </div>
   )
 }
