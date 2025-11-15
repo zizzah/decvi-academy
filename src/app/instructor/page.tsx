@@ -282,13 +282,20 @@ export default function InstructorDashboard() {
                 <Calendar className="w-4 h-4 mr-2" />
                 Schedule Class
               </Button>
-              <Button variant="outline">
-                <Video className="w-4 h-4 mr-2" />
-                {role  && (
-  <Link href="/live-classes">Manage Classes</Link>
-)}
-                Join Meeting
-              </Button>
+              <div className="flex items-center space-x-3">
+                <Link href="/live-classes">
+                  <Button variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-50">
+                    <Video className="w-4 h-4 mr-2" />
+                    Manage Classes
+                  </Button>
+                </Link>
+                <Link href="/message">
+                  <Button variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-50">
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Messages
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
 

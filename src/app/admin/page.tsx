@@ -2,8 +2,10 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Users, GraduationCap, BookOpen, TrendingUp, AlertTriangle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Users, GraduationCap, BookOpen, TrendingUp, AlertTriangle, Video, MessageSquare } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import Link from 'next/link'
 
 type CohortData = {
   cohortName: string
@@ -186,6 +188,22 @@ export default function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Quick Navigation */}
+      <div className="flex flex-wrap gap-4">
+        <Link href="/live-classes">
+          <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+            <Video className="w-4 h-4 mr-2" />
+            Manage Live Classes
+          </Button>
+        </Link>
+        <Link href="/message">
+          <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+            <MessageSquare className="w-4 h-4 mr-2" />
+            Messages
+          </Button>
+        </Link>
+      </div>
     </div>
   )
 }

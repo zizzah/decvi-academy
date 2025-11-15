@@ -20,7 +20,9 @@ import {
   Home,
   FolderKanban,
   BarChart3,
-  Settings
+  Settings,
+  Video,
+  MessageSquare
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -282,11 +284,25 @@ export default function StudentDashboard() {
                 <div>
                   <div className="text-2xl font-bold">{data.stats.currentStreak}</div>
                   <div className="text-sm text-blue-100">Day Streak</div>
-                    <Link href="/live-classes">Manage Classes</Link>
-
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Quick Navigation */}
+          <div className="flex flex-wrap gap-4">
+            <Link href="/live-classes">
+              <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+                <Video className="w-4 h-4 mr-2" />
+                Join Live Class
+              </Button>
+            </Link>
+            <Link href="/message">
+              <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Messages
+              </Button>
+            </Link>
           </div>
 
           {/* Stats Grid */}
