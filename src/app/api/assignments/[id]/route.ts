@@ -6,11 +6,12 @@ import { requireInstructor } from '@/lib/instructor-auth'
 // GET /api/assignments/[id] - Get specific assignment
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const assignment = await prisma.assignment.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         results: {
           include: {
@@ -46,7 +47,7 @@ export async function GET(
 // PUT /api/assignments/[id] - Update assignment (instructor only)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const instructorCheck = await requireInstructor()
@@ -54,11 +55,12 @@ export async function PUT(
       return instructorCheck
     }
 
+    const { id } = await params
     const body = await request.json()
     const validatedData = assignmentSchema.parse(body)
 
     const assignment = await prisma.assignment.update({
-      where: { id: params.id },
+      where: { id },
       data: validatedData
     })
 
@@ -81,7 +83,7 @@ export async function PUT(
 // DELETE /api/assignments/[id] - Delete assignment (instructor only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const instructorCheck = await requireInstructor()
@@ -89,8 +91,9 @@ export async function DELETE(
       return instructorCheck
     }
 
+    const { id } = await params
     await prisma.assignment.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({ message: 'Assignment deleted successfully' })

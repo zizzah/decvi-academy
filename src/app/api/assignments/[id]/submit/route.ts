@@ -5,7 +5,7 @@ import { getCurrentUser } from '@/lib/auth-helpers'
 // POST /api/assignments/[id]/submit - Submit assignment result (student only)
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser()
@@ -16,6 +16,7 @@ export async function POST(
       )
     }
 
+    const { id } = await params
     const body = await request.json()
     const { score, percentage, feedback } = body
 
@@ -33,7 +34,7 @@ export async function POST(
 
     // Check if assignment exists
     const assignment = await prisma.assignment.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!assignment) {
@@ -48,7 +49,7 @@ export async function POST(
       where: {
         studentId_assignmentId: {
           studentId: student.id,
-          assignmentId: params.id
+          assignmentId: id
         }
       }
     })
@@ -61,7 +62,7 @@ export async function POST(
         where: {
           studentId_assignmentId: {
             studentId: student.id,
-            assignmentId: params.id
+            assignmentId: id
           }
         },
         data: {
@@ -79,7 +80,7 @@ export async function POST(
       const newResult = await prisma.assessmentResult.create({
         data: {
           studentId: student.id,
-          assignmentId: params.id,
+          assignmentId: id,
           submittedAt: new Date(),
           score,
           percentage,
