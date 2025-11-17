@@ -1,17 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { assignmentSchema } from '@/lib/validations'
 import { requireInstructor } from '@/lib/instructor-auth'
 
-// GET /api/assignments/[id] - Get specific assignment
+// GET /api/instructor/assignments/[id] - Get single assignment with results (instructor only)
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const instructorCheck = await requireInstructor()
+    if (instructorCheck) {
+      return instructorCheck
+    }
+
     const { id } = await params
+
     const assignment = await prisma.assignment.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        results: {
+          include: {
+            student: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                user: {
+                  select: {
+                    email: true
+                  }
+                }
+              }
+            }
+          },
+          orderBy: {
+            submittedAt: 'desc'
+          }
+        },
+        _count: {
+          select: {
+            results: true
+          }
+        }
+      }
     })
 
     if (!assignment) {
@@ -31,7 +62,7 @@ export async function GET(
   }
 }
 
-// PUT /api/assignments/[id] - Update assignment (instructor only)
+// PUT /api/instructor/assignments/[id] - Update assignment (instructor only)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -44,22 +75,15 @@ export async function PUT(
 
     const { id } = await params
     const body = await request.json()
-    const validatedData = assignmentSchema.parse(body)
 
     const assignment = await prisma.assignment.update({
       where: { id },
-      data: validatedData
+      data: body
     })
 
     return NextResponse.json(assignment)
   } catch (error) {
     console.error('Error updating assignment:', error)
-    if (error instanceof Error && error.name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.message },
-        { status: 400 }
-      )
-    }
     return NextResponse.json(
       { error: 'Failed to update assignment' },
       { status: 500 }
@@ -67,7 +91,7 @@ export async function PUT(
   }
 }
 
-// DELETE /api/assignments/[id] - Delete assignment (instructor only)
+// DELETE /api/instructor/assignments/[id] - Delete assignment (instructor only)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -79,6 +103,7 @@ export async function DELETE(
     }
 
     const { id } = await params
+
     await prisma.assignment.delete({
       where: { id }
     })

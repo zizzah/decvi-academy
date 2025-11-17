@@ -6,7 +6,36 @@ import { requireInstructor } from '@/lib/instructor-auth'
 // GET /api/assignments - Get all assignments (for students)
 export async function GET(request: NextRequest) {
   try {
+    const { getCurrentStudent } = await import('@/lib/auth-helpers')
+    const currentStudent = await getCurrentStudent()
+
+    if (!currentStudent) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const assignments = await prisma.assignment.findMany({
+      include: {
+        results: {
+          where: {
+            studentId: currentStudent.id
+          },
+          select: {
+            id: true,
+            score: true,
+            percentage: true,
+            submittedAt: true,
+            isLate: true,
+            feedback: true
+          },
+          orderBy: {
+            submittedAt: 'desc'
+          },
+          take: 1
+        }
+      },
       orderBy: [
         { monthNumber: 'asc' },
         { weekNumber: 'asc' },

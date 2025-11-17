@@ -34,6 +34,9 @@ export default function InstructorAssignmentsPage() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    type: 'QUIZ',
+    topic: '',
+    instructions: '',
     dueDate: '',
     monthNumber: 1,
     weekNumber: 1,
@@ -63,12 +66,20 @@ export default function InstructorAssignmentsPage() {
     setCreating(true)
 
     try {
+      // Convert datetime-local to ISO string
+      const isoDueDate = new Date(formData.dueDate).toISOString()
+
+      const payload = {
+        ...formData,
+        dueDate: isoDueDate
+      }
+
       const response = await fetch('/api/instructor/assignments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       })
 
       if (response.ok) {
@@ -77,14 +88,22 @@ export default function InstructorAssignmentsPage() {
         setFormData({
           title: '',
           description: '',
+          type: 'QUIZ',
+          topic: '',
+          instructions: '',
           dueDate: '',
           monthNumber: 1,
           weekNumber: 1,
           maxScore: 100
         })
+      } else {
+        const errorData = await response.json()
+        console.error('Error creating assignment:', errorData)
+        alert(`Error: ${errorData.error || 'Failed to create assignment'}`)
       }
     } catch (error) {
       console.error('Error creating assignment:', error)
+      alert('Failed to create assignment. Please try again.')
     } finally {
       setCreating(false)
     }
@@ -127,8 +146,9 @@ export default function InstructorAssignmentsPage() {
                   id="title"
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="Assignment title"
+                  placeholder="Assignment title (minimum 5 characters)"
                   required
+                  minLength={5}
                 />
               </div>
 
@@ -140,6 +160,50 @@ export default function InstructorAssignmentsPage() {
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Assignment description and requirements..."
                   rows={4}
+                  required
+                  minLength={10}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="type">Type *</Label>
+                <Select
+                  value={formData.type}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="QUIZ">Quiz</SelectItem>
+                    <SelectItem value="CODING_CHALLENGE">Coding Challenge</SelectItem>
+                    <SelectItem value="PRACTICAL_EXAM">Practical Exam</SelectItem>
+                    <SelectItem value="PEER_REVIEW">Peer Review</SelectItem>
+                    <SelectItem value="ESSAY">Essay</SelectItem>
+                    <SelectItem value="VIDEO_SUBMISSION">Video Submission</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="topic">Topic *</Label>
+                <Input
+                  id="topic"
+                  value={formData.topic}
+                  onChange={(e) => setFormData(prev => ({ ...prev, topic: e.target.value }))}
+                  placeholder="Assignment topic"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="instructions">Instructions *</Label>
+                <Textarea
+                  id="instructions"
+                  value={formData.instructions}
+                  onChange={(e) => setFormData(prev => ({ ...prev, instructions: e.target.value }))}
+                  placeholder="Detailed instructions for the assignment..."
+                  rows={3}
                   required
                 />
               </div>

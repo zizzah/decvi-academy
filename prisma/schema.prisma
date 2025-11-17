@@ -376,17 +376,22 @@ model Assignment {
 // ============================================
 
 model AssessmentResult {
-  id           String    @id @default(uuid())
-  studentId    String
-  assignmentId String
-  submittedAt  DateTime?
-  score        Int?
-  percentage   Float?
-  feedback     String?
-  isLate       Boolean   @default(false)
-  attemptCount Int       @default(1)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id            String    @id @default(uuid())
+  studentId     String
+  assignmentId  String
+  submittedAt   DateTime?
+  submissionText String?
+  fileUrl       String?
+  githubUrl     String?
+  liveUrl       String?
+  videoUrl      String?
+  score         Int?
+  percentage    Float?
+  feedback      String?
+  isLate        Boolean   @default(false)
+  attemptCount  Int       @default(1)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   // Relations
   student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)

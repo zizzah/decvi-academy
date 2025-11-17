@@ -18,7 +18,7 @@ export async function POST(
 
     const { id } = await params
     const body = await request.json()
-    const { score, percentage, feedback } = body
+    const { submissionText, fileUrl, githubUrl, liveUrl, videoUrl } = body
 
     // Get student profile
     const student = await prisma.student.findUnique({
@@ -67,9 +67,11 @@ export async function POST(
         },
         data: {
           submittedAt: new Date(),
-          score,
-          percentage,
-          feedback,
+          submissionText,
+          fileUrl,
+          githubUrl,
+          liveUrl,
+          videoUrl,
           isLate,
           attemptCount: existingResult.attemptCount + 1
         }
@@ -82,9 +84,11 @@ export async function POST(
           studentId: student.id,
           assignmentId: id,
           submittedAt: new Date(),
-          score,
-          percentage,
-          feedback,
+          submissionText,
+          fileUrl,
+          githubUrl,
+          liveUrl,
+          videoUrl,
           isLate
         }
       })
