@@ -108,7 +108,7 @@ export default function SubmitAssignmentPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Assignment Not Found</h1>
-          <p className="text-gray-600 mb-8">The assignment you're looking for doesn't exist.</p>
+          <p className="text-gray-600 mb-8">The assignment you are looking for do not exist.</p>
           <Button asChild>
             <Link href="/dashboard/assignments">
               <ArrowLeft className="h-4 w-4 mr-2" />
