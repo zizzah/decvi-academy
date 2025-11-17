@@ -68,13 +68,13 @@ function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
   const router = useRouter()
   
   const menuItems = [
-    { icon: <Home className="w-5 h-5" />, label: 'Dashboard', active: true },
-    { icon: <FolderKanban className="w-5 h-5" />, label: 'Projects' },
-    { icon: <BookOpen className="w-5 h-5" />, label: 'Assignments' },
-    { icon: <BarChart3 className="w-5 h-5" />, label: 'Progress' },
-    { icon: <Award className="w-5 h-5" />, label: 'Achievements' },
-    { icon: <Settings className="w-5 h-5" />, label: 'Settings' },
-    
+    { icon: <Home className="w-5 h-5" />, label: 'Dashboard', active: true, href: '/dashboard' },
+    { icon: <FolderKanban className="w-5 h-5" />, label: 'Projects', href: '/dashboard/projects' },
+    { icon: <BookOpen className="w-5 h-5" />, label: 'Assignments', href: '/dashboard/assignments' },
+    { icon: <BarChart3 className="w-5 h-5" />, label: 'Progress', href: '/dashboard/progress' },
+    { icon: <Award className="w-5 h-5" />, label: 'Achievements', href: '/dashboard/achievements' },
+    { icon: <Settings className="w-5 h-5" />, label: 'Settings', href: '/dashboard/settings' },
+
   ]
 
   const handleLogout = async () => {
@@ -114,8 +114,9 @@ function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
 
           <nav className="flex-1 p-4 space-y-1">
             {menuItems.map((item, idx) => (
-              <button
+              <Link
                 key={idx}
+                href={item.href || '#'}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
                   item.active
                     ? 'bg-blue-50 text-blue-600'
@@ -124,7 +125,7 @@ function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
               >
                 {item.icon}
                 <span className="font-medium">{item.label}</span>
-              </button>
+              </Link>
             ))}
           </nav>
 

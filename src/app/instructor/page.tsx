@@ -78,12 +78,12 @@ function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
   const router = useRouter()
   
   const menuItems = [
-    { icon: <BookOpen className="w-5 h-5" />, label: 'Dashboard', active: true },
-    { icon: <Calendar className="w-5 h-5" />, label: 'My Classes' },
-    { icon: <Users className="w-5 h-5" />, label: 'Students' },
-    { icon: <FileText className="w-5 h-5" />, label: 'Projects' },
-    { icon: <MessageSquare className="w-5 h-5" />, label: 'Feedback' },
-    { icon: <TrendingUp className="w-5 h-5" />, label: 'Performance' },
+    { icon: <BookOpen className="w-5 h-5" />, label: 'Dashboard', active: true, href: '/instructor' },
+    { icon: <Calendar className="w-5 h-5" />, label: 'My Classes', href: '/live-classes' },
+    { icon: <Users className="w-5 h-5" />, label: 'Students', href: '/instructor/students' },
+    { icon: <FileText className="w-5 h-5" />, label: 'Projects', href: '/instructor/projects' },
+    { icon: <MessageSquare className="w-5 h-5" />, label: 'Assignments', href: '/instructor/assignments' },
+    { icon: <TrendingUp className="w-5 h-5" />, label: 'Performance', href: '/instructor/performance' },
   ]
 
   const handleLogout = async () => {
@@ -122,8 +122,9 @@ function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
 
           <nav className="flex-1 p-4 space-y-1">
             {menuItems.map((item, idx) => (
-              <button
+              <Link
                 key={idx}
+                href={item.href || '#'}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
                   item.active
                     ? 'bg-purple-50 text-purple-600'
@@ -132,7 +133,7 @@ function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
               >
                 {item.icon}
                 <span className="font-medium">{item.label}</span>
-              </button>
+              </Link>
             ))}
           </nav>
 
