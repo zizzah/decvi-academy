@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -46,13 +46,7 @@ export default function AssignmentDetailsPage() {
   const [assignment, setAssignment] = useState<Assignment | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (params.id) {
-      fetchAssignment()
-    }
-  }, [params.id])
-
-  const fetchAssignment = async () => {
+  const fetchAssignment = useCallback(async () => {
     try {
       const response = await fetch(`/api/instructor/assignments/${params.id}`)
       if (response.ok) {
@@ -64,7 +58,13 @@ export default function AssignmentDetailsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id])
+
+  useEffect(() => {
+    if (params.id) {
+      fetchAssignment()
+    }
+  }, [params.id, fetchAssignment])
 
   if (loading) {
     return (
@@ -79,7 +79,7 @@ export default function AssignmentDetailsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Assignment Not Found</h1>
-          <p className="text-gray-600 mb-8">The assignment you're looking for doesn't exist.</p>
+          <p className="text-gray-600 mb-8">The assignment you&apos;re looking for doesn&apos;t exist.</p>
           <Button asChild>
             <Link href="/instructor/assignments">
               <ArrowLeft className="h-4 w-4 mr-2" />
