@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Calendar, Users, FileText, Clock } from 'lucide-react'
+import { ArrowLeft, Calendar, FileText } from 'lucide-react'
 import Link from 'next/link'
 
 interface Assignment {
