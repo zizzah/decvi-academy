@@ -57,6 +57,13 @@ export async function POST(
     const isLate = new Date() > new Date(assignment.dueDate)
 
     if (existingResult) {
+      if (existingResult.score !== null) {
+        return NextResponse.json(
+          { error: 'This submission has already been graded and cannot be updated.' },
+          { status: 400 }
+        )
+      }
+
       // Update existing result
       const updatedResult = await prisma.assessmentResult.update({
         where: {

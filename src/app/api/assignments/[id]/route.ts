@@ -9,9 +9,26 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { getCurrentStudent } = await import('@/lib/auth-helpers')
+    const currentStudent = await getCurrentStudent()
+
+    if (!currentStudent) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const { id } = await params
     const assignment = await prisma.assignment.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        results: {
+          where: { studentId: currentStudent.id },
+          orderBy: { submittedAt: 'desc' },
+          take: 1
+        }
+      }
     })
 
     if (!assignment) {
@@ -21,7 +38,13 @@ export async function GET(
       )
     }
 
-    return NextResponse.json(assignment)
+    const [studentSubmission] = assignment.results
+    const { results: _results, ...assignmentData } = assignment
+
+    return NextResponse.json({
+      assignment: assignmentData,
+      submission: studentSubmission ?? null
+    })
   } catch (error) {
     console.error('Error fetching assignment:', error)
     return NextResponse.json(
