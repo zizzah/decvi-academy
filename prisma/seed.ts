@@ -1,6 +1,6 @@
 // prisma/seed.ts
 
-import { PrismaClient, UserRole, EnrollmentStatus, ClassType, DeliveryMode, AttendanceStatus, AttendanceMethod, AssignmentType, ProjectStatus, SkillLevel, CertificateStatus, RecommendationType, RecommendationPriority, FeedbackType, ActivityType, ResourceType, NotificationType } from '@prisma/client';
+import { PrismaClient, UserRole, EnrollmentStatus, ClassType, DeliveryMode, AttendanceStatus, AttendanceMethod, AssignmentType, ProjectStatus, SkillLevel, CertificateStatus, RecommendationType, RecommendationPriority, FeedbackType, ActivityType, ResourceType, NotificationType, LiveClassStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -152,6 +152,35 @@ async function main() {
       technologies: ['React', 'TailwindCSS', 'Vercel'],
       status: ProjectStatus.IN_PROGRESS,
       githubUrl: 'https://github.com/jane-smith/portfolio',
+    },
+  });
+
+  // Create Live Class (currently active)
+  const liveClass = await prisma.liveClass.create({
+    data: {
+      title: 'Live React Workshop',
+      description: 'Interactive live session on React components and hooks',
+      cohortId: cohort.id,
+      instructorId: instructorUser.instructor.id,
+      scheduledAt: new Date(), // Now
+      startedAt: new Date(),
+      duration: 120,
+      meetingLink: 'https://zoom.us/live-react-workshop',
+      meetingId: '123456789',
+      status: LiveClassStatus.LIVE,
+      maxStudents: 30,
+      chatEnabled: true,
+      isRecorded: true,
+    },
+  });
+
+  // Enroll student in live class
+  await prisma.liveClassEnrollment.create({
+    data: {
+      liveClassId: liveClass.id,
+      studentId: studentUser.student.id,
+      attended: false,
+      enrolledAt: new Date(),
     },
   });
 

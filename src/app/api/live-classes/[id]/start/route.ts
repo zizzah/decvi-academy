@@ -4,6 +4,16 @@ import { prisma } from '@/lib/prisma';
 import Pusher from 'pusher';
 import { getCurrentUser } from '@/lib/auth-helpers';
 
+// ✅ Validate environment variables
+if (!process.env.PUSHER_APP_ID || !process.env.PUSHER_KEY || !process.env.PUSHER_SECRET || !process.env.PUSHER_CLUSTER) {
+  console.error('Missing Pusher environment variables:', {
+    PUSHER_APP_ID: !!process.env.PUSHER_APP_ID,
+    PUSHER_KEY: !!process.env.PUSHER_KEY,
+    PUSHER_SECRET: !!process.env.PUSHER_SECRET,
+    PUSHER_CLUSTER: !!process.env.PUSHER_CLUSTER,
+  });
+}
+
 const pusher = new Pusher({
   appId: process.env.PUSHER_APP_ID!,
   key: process.env.PUSHER_KEY!,
@@ -33,7 +43,6 @@ export async function POST(
       );
     }
 
-    // ✅ Get the instructor record
     const instructor = await prisma.instructor.findUnique({
       where: { userId: session.userId }
     });
@@ -47,7 +56,6 @@ export async function POST(
 
     const { id } = await params;
 
-    // ✅ Optional: Verify the class belongs to this instructor
     const existingClass = await prisma.liveClass.findUnique({
       where: { id },
     });
@@ -78,11 +86,18 @@ export async function POST(
       },
     });
 
-    // Notify all enrolled students
-    await pusher.trigger(`live-class-${id}`, 'class-started', {
-      classId: id,
-      meetingLink: liveClass.meetingLink,
-    });
+    // ✅ Add try-catch for Pusher trigger
+    try {
+      await pusher.trigger(`live-class-${id}`, 'class-started', {
+        classId: id,
+        meetingLink: liveClass.meetingLink,
+      });
+      console.log(`✅ Pusher notification sent for class ${id}`);
+    } catch (pusherError) {
+      // ⚠️ Log the error but don't fail the request
+      console.error('Pusher notification failed:', pusherError);
+      // Class is still marked as LIVE, just notifications didn't work
+    }
 
     return NextResponse.json(liveClass);
   } catch (error) {

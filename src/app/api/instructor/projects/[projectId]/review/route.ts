@@ -1,106 +1,59 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { ProjectStatus, ActivityType } from '@prisma/client'
+import { getCurrentInstructor } from '@/lib/auth-helpers'
 
-// src/app/api/instructor/projects/[projectId]/review/route.ts
-
-import { requireInstructor } from "@/lib/instructor-auth"
-import { prisma } from "@/lib/prisma"
-import { NextRequest, NextResponse } from "next/server"
-
-/**
- * POST /api/instructor/projects/:projectId/review
- * Submit a project review
- */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ projectId: string }> }
+  { params }: { params: { projectId: string } }
 ) {
-  const authError = await requireInstructor()
-  if (authError) return authError
-
   try {
-    const { projectId } = await params
-    const body = await request.json()
-    const {
-      status,
-      feedback,
-      overallScore,
-      codeQuality,
-      functionality,
-      design,
-      documentation,
-      innovation
-    } = body
-
-    // Validate scores
-    if (overallScore < 0 || overallScore > 100) {
-      return NextResponse.json(
-        { error: 'Overall score must be between 0 and 100' },
-        { status: 400 }
-      )
+    const instructor = await getCurrentInstructor()
+    if (!instructor) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Update project
+    const body = await request.json()
+    const { status, feedback, overallScore } = body
+
     const project = await prisma.project.update({
-      where: { id: projectId },
+      where: { id: params.projectId },
       data: {
-        status,
-        feedback,
-        overallScore,
-        codeQuality,
-        functionality,
-        design,
-        documentation,
-        innovation,
-        reviewedAt: new Date()
+        status: status === 'APPROVED' ? ProjectStatus.APPROVED : ProjectStatus.NEEDS_REVISION,
+        feedback: feedback || null,
+        reviewedAt: new Date(),
+        overallScore: overallScore || null,
       },
       include: {
-        student: {
-          include: {
-            user: true
-          }
-        }
-      }
+        student: true,
+      },
     })
 
-    // Award points if approved
-    if (status === 'APPROVED') {
+    if (status === 'APPROVED' && overallScore) {
+      const pointsToAward = Math.floor(overallScore / 2)
+      
       await prisma.student.update({
         where: { id: project.studentId },
         data: {
-          totalPoints: { increment: 50 }
-        }
+          totalPoints: { increment: pointsToAward },
+        },
       })
 
-      // Create notification
-      await prisma.notification.create({
+      await prisma.activity.create({
         data: {
-          userId: project.student.userId,
-          type: 'PROJECT_REVIEWED',
-          title: 'Project Approved! 🎉',
-          message: `Your project "${project.title}" has been approved with a score of ${overallScore}%`,
-          actionUrl: `/dashboard/projects/${project.id}`
-        }
-      })
-    } else if (status === 'NEEDS_REVISION') {
-      // Create notification for revision needed
-      await prisma.notification.create({
-        data: {
-          userId: project.student.userId,
-          type: 'PROJECT_REVIEWED',
-          title: 'Project Needs Revision',
-          message: `Your project "${project.title}" requires some improvements. Check the feedback.`,
-          actionUrl: `/dashboard/projects/${project.id}`
-        }
+          studentId: project.studentId,
+          type: ActivityType.PROJECT_SUBMITTED,
+          description: `Project "${project.title}" approved with score: ${overallScore}%`,
+          points: pointsToAward,
+        },
       })
     }
 
-    return NextResponse.json({
-      message: 'Project reviewed successfully',
-      project
-    })
+    return NextResponse.json({ message: 'Project reviewed successfully', project })
   } catch (error) {
     console.error('Project review error:', error)
     return NextResponse.json(
-      { error: 'Failed to submit review' },
+      { error: 'Failed to review project' },
       { status: 500 }
     )
   }

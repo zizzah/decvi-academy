@@ -68,7 +68,7 @@ interface FormData {
   maxStudents: string;
 }
 
-type UserRole = 'Instructor' | 'Student';
+type UserRole = 'INSTRUCTOR' | 'STUDENT' | 'ADMIN' | string;
 
 const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
   cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '',
@@ -79,7 +79,7 @@ export default function LiveClassManagement() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<LiveClass | null>(null);
   const [loading, setLoading] = useState(false);
-  const [userRole] = useState<UserRole>('Instructor');
+  const [userRole, setUserRole] = useState<UserRole>('');
   const [courses] = useState<Course[]>([
     { id: 'cohort-1-web-dev', name: 'Web Development' },
     { id: 'cohort-1-web-dev', name: 'Data Science' },
@@ -95,15 +95,43 @@ export default function LiveClassManagement() {
     maxStudents: '',
   });
 
+
+  const fetchLiveClasses = async () => {
+    try {
+      const res = await fetch('/api/live-classes', {
+        credentials: 'same-origin',
+      });
+      if (!res.ok) throw new Error('Failed to fetch live classes');
+      const data: LiveClass[] = await res.json();
+      setLiveClasses(data);
+    } catch (error) {
+      console.error('Error fetching live classes:', error);
+    }
+  };
+
   useEffect(() => {
+    fetchUserRole();
     fetchLiveClasses();
-    
-    // Debug: Check if we're authenticated
-    fetch('/api/auth/me', { credentials: 'same-origin' })
-      .then(res => res.json())
-      .then(data => console.log('Current user:', data))
-      .catch(err => console.error('Auth check failed:', err));
   }, []);
+
+  const fetchUserRole = async () => {
+    try {
+      const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
+      if (!res.ok) throw new Error('Failed to fetch user role');
+      const data = await res.json();
+      if (!data.role) {
+        setUserRole('');
+      } else {
+        setUserRole(data.role.toUpperCase());
+      }
+      if (data.role && data.role.toUpperCase() === 'STUDENT') {
+        // Redirect students to dashboard to prevent access here
+        window.location.href = '/dashboard';
+      }
+    } catch (error) {
+      console.error('Failed to fetch user role:', error);
+    }
+  };
 
   // Subscribe to live class updates
   useEffect(() => {
@@ -112,9 +140,9 @@ export default function LiveClassManagement() {
     liveClasses.forEach((liveClass) => {
       const channel = pusher.subscribe(`live-class-${liveClass.id}`);
       channels[liveClass.id] = channel;
-      
+
       channel.bind('class-started', () => {
-        alert(`Live class "${liveClass.title}" has started!`);
+        alert("Live class '" + liveClass.title + "' has started!");
         fetchLiveClasses();
       });
 
@@ -133,17 +161,17 @@ export default function LiveClassManagement() {
     };
   }, [liveClasses]);
 
-  const fetchLiveClasses = async () => {
-    try {
-      const res = await fetch('/api/live-classes', {
-        credentials: 'same-origin',
-      });
-      if (!res.ok) throw new Error('Failed to fetch live classes');
-      const data: LiveClass[] = await res.json();
-      setLiveClasses(data);
-    } catch (error) {
-      console.error('Error fetching live classes:', error);
-    }
+
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      description: '',
+      courseId: '',
+      scheduledAt: '',
+      duration: 60,
+      meetingLink: '',
+      maxStudents: '',
+    });
   };
 
   const createLiveClass = async () => {
@@ -151,18 +179,18 @@ export default function LiveClassManagement() {
     try {
       const res = await fetch('/api/live-classes', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'same-origin',
         body: JSON.stringify(formData),
       });
-      
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to create live class');
       }
-      
+
       const newClass: LiveClass = await res.json();
       setLiveClasses([newClass, ...liveClasses]);
       setShowCreateModal(false);
@@ -178,21 +206,22 @@ export default function LiveClassManagement() {
 
   const startLiveClass = async (classId: number) => {
     try {
-      const res = await fetch(`/api/live-classes/${classId}/start`, {
+      const res = await fetch('/api/live-classes/' + classId + '/start', {
         method: 'POST',
         credentials: 'same-origin',
       });
-      
+
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to start class');
       }
-      
+
       const updatedClass: LiveClass = await res.json();
       setLiveClasses(
         liveClasses.map((c) => (c.id === classId ? updatedClass : c))
       );
-      
+
       // Open meeting link
       if (updatedClass.meetingLink) {
         window.open(updatedClass.meetingLink, '_blank');
@@ -209,12 +238,12 @@ export default function LiveClassManagement() {
         method: 'POST',
         credentials: 'same-origin',
       });
-      
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to enroll in class');
       }
-      
+
       fetchLiveClasses();
       alert('Successfully enrolled in class!');
     } catch (error) {
@@ -231,30 +260,18 @@ export default function LiveClassManagement() {
         method: 'DELETE',
         credentials: 'same-origin',
       });
-      
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to delete class');
       }
-      
+
       setLiveClasses(liveClasses.filter((c) => c.id !== classId));
       alert('Class deleted successfully!');
     } catch (error) {
       console.error('Error deleting class:', error);
       alert(error instanceof Error ? error.message : 'Failed to delete class');
     }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      title: '',
-      description: '',
-      courseId: '',
-      scheduledAt: '',
-      duration: 60,
-      meetingLink: '',
-      maxStudents: '',
-    });
   };
 
   const getStatusColor = (status: LiveClassStatus): string => {
@@ -300,12 +317,12 @@ export default function LiveClassManagement() {
               Live Classes
             </h1>
             <p className="text-gray-600 mt-2">
-              {userRole === 'Instructor'
+              {(userRole === 'INSTRUCTOR' || userRole === 'ADMIN')
                 ? 'Manage your live classes and schedule new sessions'
                 : 'Join live classes and view your schedule'}
             </p>
           </div>
-          {userRole === 'Instructor' && (
+          {(userRole === 'INSTRUCTOR' || userRole === 'ADMIN') && (
             <button
               onClick={() => setShowCreateModal(true)}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -342,9 +359,9 @@ export default function LiveClassManagement() {
               <div className="relative h-40 bg-gradient-to-r from-blue-500 to-purple-600">
                 <div className="absolute top-4 right-4">
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
+                    className={"px-3 py-1 rounded-full text-xs font-semibold " + getStatusColor(
                       liveClass.status
-                    )}`}
+                    )}
                   >
                     {liveClass.status}
                   </span>
@@ -382,7 +399,7 @@ export default function LiveClassManagement() {
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  {userRole === 'Instructor' ? (
+                  {(userRole === 'INSTRUCTOR' || userRole === 'ADMIN') ? (
                     <>
                       {liveClass.status === 'SCHEDULED' && (
                         <button
@@ -446,7 +463,7 @@ export default function LiveClassManagement() {
           <div className="text-center py-12">
             <Video className="w-16 h-16 mx-auto text-gray-400 mb-4" />
             <p className="text-gray-500 text-lg">No live classes scheduled yet</p>
-            {userRole === 'Instructor' && (
+            {(userRole === 'INSTRUCTOR' || userRole === 'ADMIN') && (
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -585,8 +602,8 @@ export default function LiveClassManagement() {
                 disabled={
                   loading ||
                   !formData.title ||
-                  !formData.courseId ||
-                  !formData.scheduledAt
+                  !formData.scheduledAt ||
+                  !formData.duration
                 }
                 className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >

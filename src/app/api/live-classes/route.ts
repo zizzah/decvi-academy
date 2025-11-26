@@ -156,10 +156,10 @@ export async function POST(req: Request) {
       );
     }
 
-    if (session.role !== 'INSTRUCTOR') {
-      console.log(`User ${session.userId} has role ${session.role}, not Instructor`);
+    if (session.role !== 'INSTRUCTOR' && session.role !== 'ADMIN') {
+      console.log(`User ${session.userId} has role ${session.role}, not Instructor or Admin`);
       return NextResponse.json(
-        { error: 'Unauthorized: Only instructors can create live classes' }, 
+        { error: 'Unauthorized: You do not have permission to create a live class' },
         { status: 403 }
       );
     }

@@ -23,7 +23,7 @@ interface Project {
 export default function StudentProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
-
+    console.log('Projects:', projects)
   useEffect(() => {
     fetchProjects()
   }, [])

@@ -1,36 +1,14 @@
+
 // ============================================
-// 1. app/api/projects/submit/route.ts
+// 2. app/api/projects/submit/route.ts (UPDATED)
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { ProjectStatus } from '@prisma/client'
 import { projectSubmissionSchema } from '@/lib/validations'
 import { getCurrentStudent } from '@/lib/auth-helpers'
 
-/**
- * Submits a project for a student.
- *
- * @param {NextRequest} request - The request object from Next.js
- *
- * @returns {NextResponse} - The response object from Next.js
- *
- * @throws {Error} If there is an error submitting the project.
- * @throws {ZodError} If there is a validation error.
- */
-
-/*************  ✨ Windsurf Command ⭐  *************/
-/**
- * Submits a project for a student.
- *
- * This API creates a new project in the database with the given data and
- * awards 50 points to the student for submitting the project.
- * It also creates a new activity in the database with the type
- * 'PROJECT_SUBMITTED' and the description of the submitted project.
- *
- * @returns {NextResponse} - The response object from Next.js
- * @throws {Error} If there is an error submitting the project.
- * @throws {ZodError} If there is a validation error.
-/*******  b3b450d8-feff-412a-bc5d-cffcb3271816 *******/
 export async function POST(request: NextRequest) {
   try {
     const student = await getCurrentStudent()
@@ -66,7 +44,7 @@ export async function POST(request: NextRequest) {
       videoUrl: validatedData.videoUrl ?? null,
       technologies: validatedData.technologies,
       monthNumber: validatedData.monthNumber,
-      status: 'SUBMITTED' as const,
+      status: ProjectStatus.SUBMITTED,
       submittedAt: new Date(),
       reviewedAt: null,
       overallScore: null,

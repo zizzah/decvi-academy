@@ -59,6 +59,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.56.1",
     "@prisma/config": "^6.18.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^3.0.0",
