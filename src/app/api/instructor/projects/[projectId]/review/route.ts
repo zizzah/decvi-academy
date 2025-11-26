@@ -5,7 +5,7 @@ import { getCurrentInstructor } from '@/lib/auth-helpers'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  context: { params: Promise<{ projectId: string }> }
 ) {
   try {
     const instructor = await getCurrentInstructor()
@@ -13,11 +13,14 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Await the params
+    const { projectId } = await context.params
+
     const body = await request.json()
     const { status, feedback, overallScore } = body
 
     const project = await prisma.project.update({
-      where: { id: params.projectId },
+      where: { id: projectId },
       data: {
         status: status === 'APPROVED' ? ProjectStatus.APPROVED : ProjectStatus.NEEDS_REVISION,
         feedback: feedback || null,
