@@ -530,7 +530,7 @@ function TodaysClassesWidget({
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Calendar className="w-5 h-5 text-blue-600" />
-            <span>Today's Classes</span>
+            <span>{"Today's Classes"} </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -548,7 +548,7 @@ function TodaysClassesWidget({
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Calendar className="w-5 h-5 text-blue-600" />
-            <span>Today's Classes</span>
+            <span>{"Today's Classes"}</span>
           </div>
           <Badge variant="outline">{classes.length}</Badge>
         </CardTitle>
@@ -888,7 +888,7 @@ export default function StudentDashboard() {
               <h1 className="text-3xl font-bold text-gray-900">
                 Welcome back, {data.student.firstName}!
               </h1>
-              <p className="text-gray-600 mt-1">Here's your learning progress</p>
+              <p className="text-gray-600 mt-1">{"Here's your learning progress"}</p>
             </div>
             <div className="flex items-center space-x-4 bg-gradient-to-r from-blue-600 to-blue-800 text-white px-6 py-4 rounded-xl shadow-lg">
               <div className="text-center">
