@@ -7,7 +7,7 @@ import { LiveClassStatus } from '@prisma/client';
 interface CreateLiveClassBody {
   title: string;
   description?: string;
-  courseId?: string; // ✅ Make this optional
+  cohortId?: string; // ✅ Make this optional
   scheduledAt: string;
   duration: string | number;
   meetingLink?: string;
@@ -186,7 +186,7 @@ export async function POST(req: Request) {
     const {
       title,
       description,
-      courseId,
+      cohortId,
       scheduledAt,
       duration,
       meetingLink,
@@ -201,27 +201,27 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ NEW: If courseId is provided, validate it exists
+    // ✅ NEW: If cohortId is provided, validate it exists
     let validatedCohortId: string | null = null;
-    
-    if (courseId && courseId.trim() !== '') {
+
+    if (cohortId && cohortId.trim() !== '') {
       const cohort = await prisma.cohort.findUnique({
-        where: { id: courseId }
+        where: { id: cohortId }
       });
 
       if (!cohort) {
-        console.error(`Cohort not found with id: ${courseId}`);
+        console.error(`Cohort not found with id: ${cohortId}`);
         return NextResponse.json(
-          { 
-            error: 'Course/Cohort not found. Please select a valid course or leave it empty.',
-            receivedCourseId: courseId 
+          {
+            error: 'Course/Cohort not found. Please select a valid cohort or leave it empty.',
+            receivedCohortId: cohortId
           },
           { status: 404 }
         );
       }
 
       console.log('Cohort found:', cohort.name);
-      validatedCohortId = courseId;
+      validatedCohortId = cohortId;
     } else {
       console.log('No cohort specified - creating live class without cohort');
     }

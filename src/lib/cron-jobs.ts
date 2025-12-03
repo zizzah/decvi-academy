@@ -15,16 +15,34 @@ export async function checkAttendanceWarnings() {
     })
 
     for (const student of students) {
-      const totalClasses = await prisma.class.count({
+      // Count traditional classes
+      const totalTraditionalClasses = await prisma.class.count({
         where: { cohortId: student.cohortId || undefined },
       })
 
+      // Count live classes
+      const totalLiveClasses = await prisma.liveClass.count({
+        where: { cohortId: student.cohortId || undefined },
+      })
+
+      const totalClasses = totalTraditionalClasses + totalLiveClasses
+
       if (totalClasses === 0) continue
 
-      const attendedClasses = student.attendance.filter(
+      // Count attended traditional classes
+      const attendedTraditionalClasses = student.attendance.filter(
         a => a.status === 'PRESENT' || a.status === 'LATE'
       ).length
 
+      // Count attended live classes
+      const attendedLiveClasses = await prisma.liveClassEnrollment.count({
+        where: {
+          studentId: student.id,
+          attended: true,
+        },
+      })
+
+      const attendedClasses = attendedTraditionalClasses + attendedLiveClasses
       const attendanceRate = (attendedClasses / totalClasses) * 100
 
       // Send warning if below 80%

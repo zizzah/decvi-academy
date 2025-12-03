@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { LogIn, Mail, Lock, Loader2 } from 'lucide-react'
+import Link from 'next/link'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -141,9 +142,9 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center text-sm text-gray-600">
             Do not have an account?{' '}
-            <a href="auth/register" className="text-blue-600 hover:text-blue-700 font-medium">
+            <Link href="/auth/register" className="text-blue-600 hover:text-blue-700 font-medium">
               Sign up
-            </a>
+            </Link>
           </div>
         </CardContent>
       </Card>

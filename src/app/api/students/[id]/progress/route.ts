@@ -42,19 +42,36 @@ export async function GET(
       )
     }
 
-    // Get attendance stats
+    // Get attendance stats for traditional classes
     const attendanceStats = await prisma.attendance.aggregate({
       where: { studentId },
       _count: { id: true },
       _avg: { participationScore: true },
     })
 
-    const totalClasses = await prisma.class.count({
+    // Get live class attendance stats
+    const liveClassAttendanceStats = await prisma.liveClassEnrollment.aggregate({
+      where: {
+        studentId,
+        attended: true,
+      },
+      _count: { id: true },
+    })
+
+    // Get total classes (traditional + live)
+    const totalTraditionalClasses = await prisma.class.count({
       where: { cohortId: student.cohortId || undefined },
     })
 
+    const totalLiveClasses = await prisma.liveClass.count({
+      where: { cohortId: student.cohortId || undefined },
+    })
+
+    const totalClasses = totalTraditionalClasses + totalLiveClasses
+    const totalAttended = attendanceStats._count.id + liveClassAttendanceStats._count.id
+
     const attendanceRate = totalClasses > 0
-      ? (attendanceStats._count.id / totalClasses) * 100
+      ? (totalAttended / totalClasses) * 100
       : 0
 
     // Get projects

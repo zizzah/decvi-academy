@@ -28,7 +28,7 @@ export async function calculateWeeklyProgress(studentId: string, monthNumber: nu
 
   if (!student) throw new Error('Student not found')
 
-  // Get classes for this week
+  // Get classes for this week (traditional classes)
   const weekClasses = await prisma.class.findMany({
     where: {
       cohortId: student.cohortId || undefined,
@@ -37,13 +37,38 @@ export async function calculateWeeklyProgress(studentId: string, monthNumber: nu
     },
   })
 
-  // Get attendance for this week
+  // Get live classes for this week
+  const weekLiveClasses = await prisma.liveClass.findMany({
+    where: {
+      cohortId: student.cohortId || undefined,
+      scheduledAt: {
+        gte: new Date(2024, monthNumber - 1, (weekNumber - 1) * 7 + 1), // Start of week
+        lt: new Date(2024, monthNumber - 1, weekNumber * 7 + 1), // Start of next week
+      },
+    },
+  })
+
+  // Get attendance for this week (traditional classes)
   const weekAttendance = student.attendance.filter(a =>
     weekClasses.some(c => c.id === a.classId)
   )
 
-  const attendanceRate = weekClasses.length > 0
-    ? (weekAttendance.filter(a => a.status === 'PRESENT' || a.status === 'LATE').length / weekClasses.length) * 100
+  // Get live class attendance for this week
+  const weekLiveAttendance = await prisma.liveClassEnrollment.findMany({
+    where: {
+      studentId: student.id,
+      attended: true,
+      liveClass: {
+        id: { in: weekLiveClasses.map(lc => lc.id) },
+      },
+    },
+  })
+
+  const totalWeekClasses = weekClasses.length + weekLiveClasses.length
+  const totalWeekAttended = weekAttendance.filter(a => a.status === 'PRESENT' || a.status === 'LATE').length + weekLiveAttendance.length
+
+  const attendanceRate = totalWeekClasses > 0
+    ? (totalWeekAttended / totalWeekClasses) * 100
     : 0
 
   // Get projects for this month

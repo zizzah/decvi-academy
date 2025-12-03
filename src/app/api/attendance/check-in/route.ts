@@ -60,8 +60,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate class exists and get full details
-    const classSession = await prisma.class.findUnique({
+    // Check if it's a regular class first
+    let classSession = await prisma.class.findUnique({
       where: { id: classId },
       include: {
         cohort: {
@@ -73,6 +73,41 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    let isLiveClass = false
+    let liveClassSession = null
+
+    // If not found in regular classes, check live classes
+    if (!classSession) {
+      liveClassSession = await prisma.liveClass.findUnique({
+        where: { id: classId },
+        include: {
+          cohort: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          enrollments: {
+            where: { studentId: studentId },
+            select: { id: true, attended: true, joinedAt: true }
+          }
+        },
+      })
+
+      if (liveClassSession) {
+        isLiveClass = true
+        classSession = {
+          id: liveClassSession.id,
+          cohortId: liveClassSession.cohortId || '',
+          scheduledAt: liveClassSession.scheduledAt,
+          duration: liveClassSession.duration,
+          title: liveClassSession.title,
+          topic: liveClassSession.title,
+          cohort: liveClassSession.cohort || { id: '', name: 'General' }
+        } as any
+      }
+    }
+
     if (!classSession) {
       return NextResponse.json(
         { error: 'Class not found' },
@@ -80,12 +115,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate student is in the same cohort as the class
-    if (student.cohortId !== classSession.cohortId) {
+    // Validate student is in the same cohort as the class (for regular classes)
+    if (!isLiveClass && student.cohortId !== classSession.cohortId) {
       return NextResponse.json(
         { error: 'You are not enrolled in this class cohort' },
         { status: 403 }
       )
+    }
+
+    // For live classes, allow check-in for any student - create enrollment if not exists
+    if (isLiveClass && liveClassSession) {
+      const isEnrolled = liveClassSession.enrollments.length > 0
+
+      if (!isEnrolled) {
+        await prisma.liveClassEnrollment.create({
+          data: {
+            liveClassId: classId,
+            studentId: studentId,
+            enrolledAt: new Date()
+          }
+        })
+        // Refresh the liveClassSession to include the new enrollment
+        liveClassSession = await prisma.liveClass.findUnique({
+          where: { id: classId },
+          include: {
+            cohort: { select: { id: true, name: true } },
+            enrollments: { where: { studentId: studentId }, select: { id: true, attended: true, joinedAt: true } }
+          }
+        })
+      }
     }
 
     // Check if class is happening now (within reasonable timeframe)
@@ -136,24 +194,46 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if already checked in
-    const existing = await prisma.attendance.findUnique({
-      where: {
-        studentId_classId: { studentId, classId },
-      },
-    })
+    let existingAttendance = null
+    let existingLiveEnrollment = null
 
-    if (existing) {
-      return NextResponse.json(
-        { 
-          error: 'Already checked in',
-          attendance: {
-            status: existing.status,
-            checkInTime: existing.checkInTime,
-            lateMinutes: existing.lateMinutes,
-          }
+    if (isLiveClass && liveClassSession) {
+      // For live classes, check enrollment attendance
+      existingLiveEnrollment = liveClassSession.enrollments[0]
+      if (existingLiveEnrollment && existingLiveEnrollment.attended) {
+        return NextResponse.json(
+          {
+            error: 'Already checked in',
+            attendance: {
+              status: 'PRESENT',
+              checkInTime: existingLiveEnrollment.joinedAt,
+              lateMinutes: 0,
+            }
+          },
+          { status: 400 }
+        )
+      }
+    } else {
+      // For regular classes, check attendance table
+      existingAttendance = await prisma.attendance.findUnique({
+        where: {
+          studentId_classId: { studentId, classId },
         },
-        { status: 400 }
-      )
+      })
+
+      if (existingAttendance) {
+        return NextResponse.json(
+          {
+            error: 'Already checked in',
+            attendance: {
+              status: existingAttendance.status,
+              checkInTime: existingAttendance.checkInTime,
+              lateMinutes: existingAttendance.lateMinutes,
+            }
+          },
+          { status: 400 }
+        )
+      }
     }
 
     // Calculate if late
@@ -171,23 +251,42 @@ export async function POST(request: NextRequest) {
       status = 'PRESENT'
     }
 
-    // Create attendance record
-    const attendance = await prisma.attendance.create({
-      data: {
-        studentId,
-        classId,
-        status,
-        method,
-        checkInTime,
-        lateMinutes,
-        latitude,
-        longitude,
-      },
-    })
+    let attendanceRecord
+
+    if (isLiveClass) {
+      // For live classes, update the enrollment record
+      attendanceRecord = await prisma.liveClassEnrollment.update({
+        where: {
+          liveClassId_studentId: {
+            liveClassId: classId,
+            studentId: studentId
+          }
+        },
+        data: {
+          attended: true,
+          joinedAt: checkInTime,
+          durationMins: Math.floor((new Date().getTime() - checkInTime.getTime()) / (1000 * 60))
+        },
+      })
+    } else {
+      // For regular classes, create attendance record
+      attendanceRecord = await prisma.attendance.create({
+        data: {
+          studentId,
+          classId,
+          status,
+          method,
+          checkInTime,
+          lateMinutes,
+          latitude,
+          longitude,
+        },
+      })
+    }
 
     // Award points for attendance
     const pointsAwarded = status === 'PRESENT' ? 10 : status === 'LATE' ? 5 : 0
-    
+
     if (pointsAwarded > 0) {
       await prisma.student.update({
         where: { id: studentId },
@@ -202,10 +301,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: `Checked in successfully as ${status}`,
       attendance: {
-        id: attendance.id,
-        status: attendance.status,
-        checkInTime: attendance.checkInTime,
-        lateMinutes: attendance.lateMinutes,
+        id: isLiveClass ? attendanceRecord.id : attendanceRecord.id,
+        status: status,
+        checkInTime: checkInTime,
+        lateMinutes: lateMinutes,
         pointsAwarded,
       },
       class: {
@@ -261,12 +360,37 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Check if already checked in
-    const attendance = await prisma.attendance.findUnique({
+    // Check if already checked in (for regular classes)
+    let attendance = await prisma.attendance.findUnique({
       where: {
         studentId_classId: { studentId, classId },
       },
     })
+
+    // If no attendance found and it might be a live class, check live class enrollment
+    if (!attendance) {
+      const liveClass = await prisma.liveClass.findUnique({
+        where: { id: classId },
+        include: {
+          enrollments: {
+            where: { studentId: studentId },
+            select: { attended: true, joinedAt: true }
+          }
+        },
+      })
+
+      if (liveClass && liveClass.enrollments.length > 0) {
+        const enrollment = liveClass.enrollments[0]
+        return NextResponse.json({
+          hasCheckedIn: enrollment.attended,
+          attendance: enrollment.attended ? {
+            status: 'PRESENT',
+            checkInTime: enrollment.joinedAt,
+            lateMinutes: 0,
+          } : null,
+        })
+      }
+    }
 
     return NextResponse.json({
       hasCheckedIn: !!attendance,

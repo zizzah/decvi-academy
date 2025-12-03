@@ -8,8 +8,15 @@ import Pusher from 'pusher-js';
 type LiveClassStatus = 'SCHEDULED' | 'LIVE' | 'COMPLETED' | 'CANCELLED';
 
 interface Cohort {
-  id: number;
+  id: string;
   name: string;
+  description: string | null;
+  startDate: string;
+  endDate: string;
+  maxStudents: number;
+  _count: {
+    students: number;
+  };
 }
 
 interface Instructor {
@@ -38,30 +45,26 @@ interface LiveClass {
   id: number;
   title: string;
   description: string | null;
-  cohortId: number;
+  cohortId: string | null;
   instructorId: number;
   scheduledAt: string;
   duration: number;
   meetingLink: string | null;
   maxStudents: number | null;
   status: LiveClassStatus;
-  cohort: Cohort;
+  cohort: Cohort | null;
   instructor: Instructor;
   enrollments: Enrollment[];
   _count: {
-    enrollments: number;
-  };
-}
+    enrollments: number
+  }
 
-interface Course {
-  id: string;
-  name: string;
-}
+    }
 
 interface FormData {
   title: string;
   description: string;
-  courseId: string;
+  cohortId: string;
   scheduledAt: string;
   duration: number;
   meetingLink: string;
@@ -80,15 +83,13 @@ export default function LiveClassManagement() {
   const [selectedClass, setSelectedClass] = useState<LiveClass | null>(null);
   const [loading, setLoading] = useState(false);
   const [userRole, setUserRole] = useState<UserRole>('');
-  const [courses] = useState<Course[]>([
-    { id: 'cohort-1-web-dev', name: 'Web Development' },
-    { id: 'cohort-1-web-dev', name: 'Data Science' },
-  ]);
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [loadingCohorts, setLoadingCohorts] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
     title: '',
     description: '',
-    courseId: '',
+    cohortId: '',
     scheduledAt: '',
     duration: 60,
     meetingLink: '',
@@ -112,6 +113,7 @@ export default function LiveClassManagement() {
   useEffect(() => {
     fetchUserRole();
     fetchLiveClasses();
+    fetchCohorts();
   }, []);
 
   const fetchUserRole = async () => {
@@ -130,6 +132,22 @@ export default function LiveClassManagement() {
       }
     } catch (error) {
       console.error('Failed to fetch user role:', error);
+    }
+  };
+
+  const fetchCohorts = async () => {
+    setLoadingCohorts(true);
+    try {
+      const res = await fetch('/api/cohorts', {
+        credentials: 'same-origin',
+      });
+      if (!res.ok) throw new Error('Failed to fetch cohorts');
+      const data: Cohort[] = await res.json();
+      setCohorts(data);
+    } catch (error) {
+      console.error('Error fetching cohorts:', error);
+    } finally {
+      setLoadingCohorts(false);
     }
   };
 
@@ -166,7 +184,7 @@ export default function LiveClassManagement() {
     setFormData({
       title: '',
       description: '',
-      courseId: '',
+      cohortId: '',
       scheduledAt: '',
       duration: 60,
       meetingLink: '',
@@ -514,19 +532,19 @@ export default function LiveClassManagement() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Course *
+                  Cohort *
                 </label>
                 <select
-                  value={formData.courseId}
+                  value={formData.cohortId}
                   onChange={(e) =>
-                    setFormData({ ...formData, courseId: e.target.value })
+                    setFormData({ ...formData, cohortId: e.target.value })
                   }
                   className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Select a course</option>
-                  {courses.map((course) => (
-                    <option key={course.id} value={course.id}>
-                      {course.name}
+                  <option value="">Select a cohort</option>
+                  {cohorts.map((cohort) => (
+                    <option key={cohort.id} value={cohort.id}>
+                      {cohort.name}
                     </option>
                   ))}
                 </select>
