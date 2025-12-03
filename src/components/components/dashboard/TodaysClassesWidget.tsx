@@ -149,7 +149,7 @@ export function TodaysClassesWidget({ studentId, onCheckIn }: TodaysClassesWidge
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Calendar className="w-5 h-5 text-blue-600" />
-            <span>Today's Classes</span>
+            <span>{"Today's Classes"}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -167,7 +167,7 @@ export function TodaysClassesWidget({ studentId, onCheckIn }: TodaysClassesWidge
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Calendar className="w-5 h-5 text-blue-600" />
-            <span>Today's Classes</span>
+            <span>{"Today's Classes"}</span>
           </div>
           <Badge variant="outline">{classes.length}</Badge>
         </CardTitle>
