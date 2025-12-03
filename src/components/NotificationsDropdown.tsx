@@ -51,7 +51,7 @@ export default function NotificationsDropdown({ studentId }: NotificationsDropdo
         {
           id: '1',
           title: 'Assignment Due Soon',
-          message: 'Your "React Fundamentals" assignment is due in 2 hours.',
+          message: 'Your &ldquo;React Fundamentals&rdquo; assignment is due in 2 hours.',
           type: 'warning',
           read: false,
           createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
@@ -60,7 +60,7 @@ export default function NotificationsDropdown({ studentId }: NotificationsDropdo
         {
           id: '2',
           title: 'Achievement Unlocked!',
-          message: 'Congratulations! You earned the "Perfect Attendance" badge.',
+          message: 'Congratulations! You earned the &ldquo;Perfect Attendance&rdquo; badge.',
           type: 'success',
           read: false,
           createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago

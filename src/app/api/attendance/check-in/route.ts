@@ -104,7 +104,15 @@ export async function POST(request: NextRequest) {
           title: liveClassSession.title,
           topic: liveClassSession.title,
           cohort: liveClassSession.cohort || { id: '', name: 'General' }
-        } as any
+        } as {
+          id: string;
+          cohortId: string;
+          scheduledAt: Date;
+          duration: number;
+          title: string;
+          topic: string;
+          cohort: { id: string; name: string };
+        }
       }
     }
 
@@ -251,7 +259,7 @@ export async function POST(request: NextRequest) {
       status = 'PRESENT'
     }
 
-    let attendanceRecord
+    const attendanceRecord
 
     if (isLiveClass) {
       // For live classes, update the enrollment record
