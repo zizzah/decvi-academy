@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
 
       if (liveClassSession) {
         isLiveClass = true
+        // Create a normalized class session object for live classes
         classSession = {
           id: liveClassSession.id,
           cohortId: liveClassSession.cohortId || '',
@@ -103,16 +104,21 @@ export async function POST(request: NextRequest) {
           duration: liveClassSession.duration,
           title: liveClassSession.title,
           topic: liveClassSession.title,
-          cohort: liveClassSession.cohort || { id: '', name: 'General' }
-        } as {
-          id: string;
-          cohortId: string;
-          scheduledAt: Date;
-          duration: number;
-          title: string;
-          topic: string;
-          cohort: { id: string; name: string };
-        }
+          cohort: liveClassSession.cohort || { id: '', name: 'General' },
+          createdAt: new Date(), // Add required fields with default values
+          updatedAt: new Date(),
+          description: null,
+          classType: 'LIVE' as any,
+          deliveryMode: 'VIRTUAL' as any,
+          instructorId: '',
+          topicId: null,
+          curriculumId: null,
+          maxStudents: 100,
+          enrolledCount: 0,
+          status: 'ACTIVE' as any,
+          meetingUrl: null,
+          recordingUrl: null
+        } as any
       }
     }
 

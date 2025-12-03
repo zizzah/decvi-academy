@@ -60,7 +60,7 @@ export default function NotificationsDropdown({ studentId }: NotificationsDropdo
         {
           id: '2',
           title: 'Achievement Unlocked!',
-          message: 'Congratulations! You earned the &ldquo;Perfect Attendance&rdquo; badge.',
+          message: 'Congratulations! You earned the "Perfect Attendance" badge.',
           type: 'success',
           read: false,
           createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
@@ -197,7 +197,7 @@ export default function NotificationsDropdown({ studentId }: NotificationsDropdo
               <div className="p-8 text-center text-gray-500">
                 <Bell className="w-12 h-12 mx-auto mb-2 text-gray-300" />
                 <p className="font-medium">No notifications</p>
-                <p className="text-sm">You're all caught up!</p>
+                <p className="text-sm"> {"You're all caught up!"}</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
