@@ -259,7 +259,7 @@ export async function POST(request: NextRequest) {
       status = 'PRESENT'
     }
 
-    const attendanceRecord
+    let attendanceRecord
 
     if (isLiveClass) {
       // For live classes, update the enrollment record
