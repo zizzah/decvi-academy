@@ -409,7 +409,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if already checked in (for regular classes)
-    let attendance = await prisma.attendance.findUnique({
+    const attendance = await prisma.attendance.findUnique({
       where: {
         studentId_classId: { studentId, classId },
       },
