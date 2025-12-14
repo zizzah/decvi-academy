@@ -5,6 +5,37 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth-helpers'
+import { ClassType, DeliveryMode } from '@prisma/client'
+
+// Define a normalized class session type that can handle both regular and live classes
+type ClassSessionType = Awaited<ReturnType<typeof prisma.class.findUnique>> | NormalizedClassSession
+
+interface NormalizedClassSession {
+  id: string
+  cohortId: string
+  scheduledAt: Date
+  duration: number
+  title: string
+  topic: string
+  cohort: { id: string; name: string }
+  createdAt: Date
+  updatedAt: Date
+  description: string | null
+  classType: ClassType
+  deliveryMode: DeliveryMode
+  instructorId: string
+  topicId: string | null
+  curriculumId: string | null
+  maxStudents: number
+  enrolledCount: number
+  status: string
+  meetingUrl: string | null
+  recordingUrl: string | null
+  monthNumber: number
+  weekNumber: number
+  zoomLink: string | null
+  materialsUrl: string | null
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -61,7 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if it's a regular class first
-    let classSession = await prisma.class.findUnique({
+    let classSession: ClassSessionType | null = await prisma.class.findUnique({
       where: { id: classId },
       include: {
         cohort: {
@@ -90,7 +121,7 @@ export async function POST(request: NextRequest) {
           enrollments: {
             where: { studentId: studentId },
             select: { id: true, attended: true, joinedAt: true }
-          }
+          },
         },
       })
 
@@ -105,20 +136,24 @@ export async function POST(request: NextRequest) {
           title: liveClassSession.title,
           topic: liveClassSession.title,
           cohort: liveClassSession.cohort || { id: '', name: 'General' },
-          createdAt: new Date(), // Add required fields with default values
-          updatedAt: new Date(),
-          description: null,
-          classType: 'LIVE' as any,
-          deliveryMode: 'VIRTUAL' as any,
-          instructorId: '',
+          createdAt: liveClassSession.createdAt,
+          updatedAt: liveClassSession.updatedAt,
+          description: liveClassSession.description,
+          classType: ClassType.LECTURE,
+          deliveryMode: DeliveryMode.ZOOM,
+          instructorId: liveClassSession.instructorId || '',
           topicId: null,
           curriculumId: null,
           maxStudents: 100,
           enrolledCount: 0,
-          status: 'ACTIVE' as any,
+          status: 'ACTIVE',
           meetingUrl: null,
-          recordingUrl: null
-        } as any
+          recordingUrl: null,
+          monthNumber: 0,
+          weekNumber: 0,
+          zoomLink: null,
+          materialsUrl: null
+        } as NormalizedClassSession
       }
     }
 
@@ -163,7 +198,6 @@ export async function POST(request: NextRequest) {
     // Check if class is happening now (within reasonable timeframe)
     const now = new Date()
     const scheduledTime = new Date(classSession.scheduledAt)
-    const classEndTime = new Date(scheduledTime.getTime() + classSession.duration * 60 * 1000)
     const thirtyMinutesBefore = new Date(scheduledTime.getTime() - 30 * 60 * 1000)
     const fourHoursAfterStart = new Date(scheduledTime.getTime() + 4 * 60 * 60 * 1000)
 
@@ -324,7 +358,7 @@ export async function POST(request: NextRequest) {
       class: {
         title: classSession.title,
         topic: classSession.topic,
-        cohort: classSession.cohort.name,
+        cohort: 'cohort' in classSession ? classSession.cohort.name : 'General',
       },
     })
   } catch (error) {
