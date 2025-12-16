@@ -1,12 +1,12 @@
 // ============================================
 // 3. app/api/certificates/check-eligibility/route.ts
 // ============================================
+export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { isEligibleForCertificate, generateCertificateNumber,calculateGrade } from '@/lib/utils'
 // Add to TOP of each file (before imports):
-export const dynamic = 'force-dynamic';
 
 /**
  * Checks if a student is eligible for a certificate based on their attendance rate, number of projects completed,

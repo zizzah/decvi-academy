@@ -1,8 +1,9 @@
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { ProjectStatus, ActivityType } from '@prisma/client'
 import { getCurrentInstructor } from '@/lib/auth-helpers'
-export const dynamic = 'force-dynamic';
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ projectId: string }> }

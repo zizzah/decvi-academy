@@ -1,12 +1,12 @@
 // ============================================
 // 4. app/api/admin/cohorts/create/route.ts
 // ============================================
+export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 // Add to TOP of each file (before imports):
-export const dynamic = 'force-dynamic';
 
 const cohortSchema = z.object({
   name: z.string().min(3),

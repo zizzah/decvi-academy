@@ -1,10 +1,10 @@
 // src/app/api/instructor/students/route.ts
+export const dynamic = 'force-dynamic';
 
 import { requireInstructor } from "@/lib/instructor-auth"
 import { prisma } from "@/lib/prisma"
 import { NextRequest, NextResponse } from "next/server"
 // Add to TOP of each file (before imports):
-export const dynamic = 'force-dynamic';
 /**
  * GET /api/instructor/students
  * Fetches all students in instructor's cohorts

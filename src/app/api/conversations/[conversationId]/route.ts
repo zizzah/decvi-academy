@@ -1,10 +1,11 @@
 // app/api/conversations/[conversationId]/route.ts
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import Pusher from 'pusher';
 // Add to TOP of each file (before imports):
-export const dynamic = 'force-dynamic';
 // CRITICAL FIX: Use NEXT_PUBLIC_ prefix is only for client-side variables
 // For server-side API routes, use the non-prefixed version
 const pusher = new Pusher({

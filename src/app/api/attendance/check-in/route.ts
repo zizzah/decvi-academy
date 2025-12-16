@@ -1,13 +1,13 @@
 // ============================================
 // app/api/attendance/check-in/route.ts (IMPROVED)
 // ============================================
+export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth-helpers'
 import { ClassType, DeliveryMode } from '@prisma/client'
 // Add to TOP of each file (before imports):
-export const dynamic = 'force-dynamic';
 
 // Define a normalized class session type that can handle both regular and live classes
 type ClassSessionType = Awaited<ReturnType<typeof prisma.class.findUnique>> | NormalizedClassSession

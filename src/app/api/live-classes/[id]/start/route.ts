@@ -1,10 +1,11 @@
 // app/api/live-classes/[id]/start/route.ts
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import Pusher from 'pusher';
 import { getCurrentUser } from '@/lib/auth-helpers';
 // Add to TOP of each file (before imports):
-export const dynamic = 'force-dynamic';
 
 // ✅ Validate environment variables
 if (!process.env.PUSHER_APP_ID || !process.env.PUSHER_KEY || !process.env.PUSHER_SECRET || !process.env.PUSHER_CLUSTER) {

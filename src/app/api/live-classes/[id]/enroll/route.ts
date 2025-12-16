@@ -1,9 +1,10 @@
 // app/api/live-classes/[id]/enroll/route.ts
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth-helpers';
 // Add to TOP of each file (before imports):
-export const dynamic = 'force-dynamic';
 
 export async function POST(
   req: Request,

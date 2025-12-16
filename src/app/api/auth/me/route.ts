@@ -1,4 +1,6 @@
 // app/api/auth/me/route.ts - Get current user endpoint
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'

@@ -2,11 +2,11 @@
 // ============================================
 // 5. app/api/admin/analytics/dashboard/route.ts
 // ============================================
+export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 // Add to TOP of each file (before imports):
-export const dynamic = 'force-dynamic';
 /**
  * GET /admin/analytics/dashboard
  *

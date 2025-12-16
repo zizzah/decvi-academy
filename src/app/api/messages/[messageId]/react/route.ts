@@ -1,10 +1,10 @@
 // src/app/api/messages/[messageId]/react/route.ts
+export const dynamic = 'force-dynamic';
 
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { prisma } from "@/lib/prisma"
 import { NextRequest, NextResponse } from "next/server"
 // Add to TOP of each file (before imports):
-export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/messages/[messageId]/react
