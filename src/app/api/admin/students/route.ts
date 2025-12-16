@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/admin-auth'
 import { Prisma, EnrollmentStatus } from '@prisma/client'
+export const dynamic = 'force-dynamic'; // ← ADD THIS
 
 export async function GET(request: NextRequest) {
   const authError = await requireAdmin()
