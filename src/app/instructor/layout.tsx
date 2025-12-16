@@ -1,4 +1,5 @@
 // src/app/instructor/layout.tsx
+export const dynamic = 'force-dynamic';
 import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth-helpers'

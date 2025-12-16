@@ -1,4 +1,5 @@
 // src/app/admin/layout.tsx
+export const dynamic = 'force-dynamic';
 import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import AdminSidebar from '@/components/admin/AdminSidebar'
