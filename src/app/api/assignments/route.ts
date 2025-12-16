@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { assignmentSchema } from '@/lib/validations'
 import { requireInstructor } from '@/lib/instructor-auth'
+// Add to TOP of each file (before imports):
+export const dynamic = 'force-dynamic';
 
 // GET /api/assignments - Get all assignments (for students)
 export async function GET(request: NextRequest) {

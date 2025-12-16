@@ -5,6 +5,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth-helpers' // or your auth method
+// Add to TOP of each file (before imports):
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {

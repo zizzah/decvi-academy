@@ -3,7 +3,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pusherServer } from '@/lib/pusher'
 import { getCurrentUser } from '@/lib/auth-helpers'
-
+// Add to TOP of each file (before imports):
+export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser()

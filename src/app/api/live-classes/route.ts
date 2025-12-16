@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import { LiveClassStatus } from '@prisma/client';
-
+// Add to TOP of each file (before imports):
+export const dynamic = 'force-dynamic';
 interface CreateLiveClassBody {
   title: string;
   description?: string;
