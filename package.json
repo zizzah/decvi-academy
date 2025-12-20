@@ -23,6 +23,7 @@
     "@radix-ui/react-progress": "^1.1.7",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-tabs": "^1.1.13",
     "add": "^2.0.6",
     "badge": "^1.0.3",
     "bcryptjs": "^3.0.2",
@@ -35,6 +36,7 @@
     "dialog": "^0.3.1",
     "dotenv": "^17.2.3",
     "dropdown-menu": "^0.1.1",
+    "groq-sdk": "^0.37.0",
     "input": "^1.0.1",
     "jose": "^6.1.0",
     "jsonwebtoken": "^9.0.2",
@@ -49,6 +51,7 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-hook-form": "^7.65.0",
+    "react-markdown": "^10.1.0",
     "recharts": "^3.3.0",
     "resend": "^6.2.2",
     "select": "^1.1.2",
@@ -57,6 +60,8 @@
     "tailwind-merge": "^3.3.1",
     "toast": "^0.5.4",
     "toasty": "^6.0.3",
+    "vm2": "^3.10.0",
+    "vm2-fixed": "^0.0.1",
     "zod": "^4.1.12"
   },
   "devDependencies": {

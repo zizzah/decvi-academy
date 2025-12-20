@@ -110,6 +110,12 @@ export default function InstructorProjectsPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Student Projects</h1>
         <p className="text-gray-600 mt-2">Review and provide feedback on student project submissions</p>
+        <div className="mt-4">
+          <Link href="/instructor" className="text-blue-600 hover:underline flex items-center">
+            <ExternalLink className="h-4 w-4 mr-1" />
+            Back to Dashboard
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

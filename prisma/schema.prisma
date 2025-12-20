@@ -113,6 +113,7 @@ model Student {
   taskSubmissions       TaskSubmission[]
   assignmentSubmissions AssignmentSubmission[]
   projectSubmissions    ProjectSubmission[]
+  aiChatMessages        AIChatMessage[]  
 
   @@map("students")
 }
@@ -1039,6 +1040,7 @@ model CourseLesson {
   week            CourseWeek          @relation(fields: [weekId], references: [id], onDelete: Cascade)
   tasks           LessonTask[]
   studentProgress StudentLessonProgress[]
+  aiChatMessages  AIChatMessage[]  
 
   @@unique([weekId, dayNumber])
   @@index([weekId, order])
@@ -1282,3 +1284,17 @@ model ProjectSubmission {
 // taskSubmissions       TaskSubmission[]
 // assignmentSubmissions AssignmentSubmission[]
 // projectSubmissions    ProjectSubmission[]
+
+model AIChatMessage {
+  id            String   @id @default(cuid())
+  lessonId      String
+  studentId     String
+  role          String   // 'user' or 'assistant'
+  content       String   @db.Text
+  timestamp     DateTime @default(now())
+  
+  lesson        CourseLesson @relation(fields: [lessonId], references: [id])
+  student       Student @relation(fields: [studentId], references: [id])
+  
+  @@index([lessonId, studentId, timestamp])
+}

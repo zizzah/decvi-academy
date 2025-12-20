@@ -1,5 +1,7 @@
+'use client'
+
 import React from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
@@ -9,7 +11,8 @@ import {
   BarChart3,
   Award,
   Settings,
-  LogOut
+  LogOut,
+  GraduationCap
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -19,14 +22,45 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const router = useRouter()
+  const pathname = usePathname()
   
   const menuItems = [
-    { icon: <Home className="w-5 h-5" />, label: 'Dashboard', active: true, href: '/dashboard' },
-    { icon: <FolderKanban className="w-5 h-5" />, label: 'Projects', href: '/dashboard/projects' },
-    { icon: <BookOpen className="w-5 h-5" />, label: 'Assignments', href: '/dashboard/assignments' },
-    { icon: <BarChart3 className="w-5 h-5" />, label: 'Progress', href: '/dashboard/progress' },
-    { icon: <Award className="w-5 h-5" />, label: 'Achievements', href: '/dashboard/achievements' },
-    { icon: <Settings className="w-5 h-5" />, label: 'Settings', href: '/dashboard/settings' },
+    { 
+      icon: <Home className="w-5 h-5" />, 
+      label: 'Dashboard', 
+      href: '/dashboard' 
+    },
+    { 
+      icon: <GraduationCap className="w-5 h-5" />, 
+      label: 'Study', 
+      href: '/study',
+      badge: 'New' // Optional: Remove this line after students are familiar with the feature
+    },
+    { 
+      icon: <FolderKanban className="w-5 h-5" />, 
+      label: 'Projects', 
+      href: '/dashboard/projects' 
+    },
+    { 
+      icon: <BookOpen className="w-5 h-5" />, 
+      label: 'Assignments', 
+      href: '/dashboard/assignments' 
+    },
+    { 
+      icon: <BarChart3 className="w-5 h-5" />, 
+      label: 'Progress', 
+      href: '/dashboard/progress' 
+    },
+    { 
+      icon: <Award className="w-5 h-5" />, 
+      label: 'Achievements', 
+      href: '/dashboard/achievements' 
+    },
+    { 
+      icon: <Settings className="w-5 h-5" />, 
+      label: 'Settings', 
+      href: '/dashboard/settings' 
+    },
   ]
 
   const handleLogout = async () => {
@@ -64,20 +98,31 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
 
           <nav className="flex-1 p-4 space-y-1">
-            {menuItems.map((item, idx) => (
-              <Link
-                key={idx}
-                href={item.href || '#'}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
-                  item.active
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                {item.icon}
-                <span className="font-medium">{item.label}</span>
-              </Link>
-            ))}
+            {menuItems.map((item, idx) => {
+              // Check if current route is active
+              const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
+              
+              return (
+                <Link
+                  key={idx}
+                  href={item.href || '#'}
+                  onClick={onClose}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                    isActive
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {item.icon}
+                  <span className="font-medium">{item.label}</span>
+                  {item.badge && (
+                    <span className="ml-auto bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              )
+            })}
           </nav>
 
           <div className="p-4 border-t border-gray-200">

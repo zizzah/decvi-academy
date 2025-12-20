@@ -1,24 +1,38 @@
-# TODO: Implement Project and Assignment Functions
+# Study Feature Implementation TODO
 
-## Steps to Complete:
-- [ ] Create Student Projects Page (`/dashboard/projects`) - List all projects, submit new projects, view status with progress tracking
-- [ ] Create Instructor Projects Page (`/instructor/projects`) - View all student projects, review pending submissions with feedback forms
-- [x] Create Assignment API Endpoints - Full CRUD operations for assignments management
-  - [x] `/api/assignments/route.ts` (GET, POST)
-  - [x] `/api/assignments/[id]/route.ts` (GET, PUT, DELETE)
-  - [x] `/api/assignments/[id]/submit/route.ts` (POST)
-  - [x] `/api/instructor/assignments/route.ts` (GET)
-- [ ] Create Student Assignments Page (`/dashboard/assignments`) - View available assignments, submit completed work
-- [ ] Create Instructor Assignments Page (`/instructor/assignments`) - Create new assignments, view submissions, grade work
-- [ ] Update Navigation - Make sidebar links functional in both dashboards
-  - [ ] Update student dashboard sidebar links
-  - [ ] Update instructor dashboard sidebar links
-- [ ] Create Form Components
-  - [ ] ProjectSubmissionForm component
-  - [ ] ProjectReviewForm component
-  - [ ] AssignmentCreationForm component
-  - [ ] AssignmentSubmissionForm component
-- [ ] Test all CRUD operations and form submissions
-- [ ] Verify role-based access control
-- [ ] Add proper error handling and loading states
-- [ ] Ensure responsive design across devices
+## Phase 1: Core Infrastructure
+- [ ] Add "Study" menu item to sidebar
+- [ ] Create study dashboard page (/dashboard/study)
+- [ ] Create API endpoints for course enrollment and progress
+
+## Phase 2: Curriculum Components
+- [ ] Create CourseCard component for course selection
+- [ ] Create WeekView component for displaying weeks
+- [ ] Create DayView component for daily lessons/tasks
+- [ ] Create LessonCard component for individual lessons
+- [ ] Create TaskCard component for tasks
+
+## Phase 3: Database Seeding
+- [ ] Create HTML curriculum seed data (4 weeks)
+- [ ] Create CSS/Tailwind curriculum seed data (6 weeks)
+- [ ] Create JavaScript/React curriculum seed data (6 weeks)
+- [ ] Create Data Analyst curriculum seed data
+- [ ] Update seed.ts to include all curricula
+
+## Phase 4: Progress Tracking
+- [ ] Implement lesson completion tracking
+- [ ] Implement task submission system
+- [ ] Add progress indicators and badges
+- [ ] Create study streak tracking
+
+## Phase 5: UI/UX Polish
+- [ ] Add smooth animations and transitions
+- [ ] Implement responsive design
+- [ ] Add loading states and error handling
+- [ ] Create engaging progress visualizations
+
+## Phase 6: Testing & Refinement
+- [ ] Test enrollment flow
+- [ ] Test progress tracking
+- [ ] Validate curriculum data integrity
+- [ ] Performance optimization
